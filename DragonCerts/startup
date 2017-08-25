@@ -1,0 +1,37 @@
+#!/bin/bash
+
+echo "Reading environment variables ..." >> /var/log/cron.log
+if [[ -z "${SITE_HOSTNAME}" ]]; then
+  echo "Set \"SITE_HOSTNAME\" environment variable." >> /var/log/cron.log
+  exit 1
+else
+  SITE_HOSTNAME="$(echo -e "${SITE_HOSTNAME}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  echo "SITE_HOSTNAME=${SITE_HOSTNAME}" >> /var/log/cron.log
+fi
+
+if [[ -z "${SOCKET_HOSTNAME}" ]]; then
+  echo "Set \"SOCKET_HOSTNAME\" environment variable." >> /var/log/cron.log
+  exit 1
+else
+  SOCKET_HOSTNAME="$(echo -e "${SOCKET_HOSTNAME}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  echo "SOCKET_HOSTNAME=${SOCKET_HOSTNAME}" >> /var/log/cron.log
+fi
+
+if [[ -z "${SSL_API_KEY}" ]]; then
+  echo "Set \"SSL_API_KEY\" environment variable." >> /var/log/cron.log
+  exit 1 
+else
+  SSL_API_KEY="$(echo -e "${SSL_API_KEY}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  echo "SSL_API_KEY=***********${SSL_API_KEY: -3}" >> /var/log/cron.log
+fi
+
+sed -i "s/SSL_API_KEY/${SSL_API_KEY}/g" /nsone.ini
+
+if [[ ! -d "/etc/letsencrypt/live" ]]; then
+  echo -e "Certs directory does not exist ... "
+  /generate-certs.sh >> /var/log/cron.log
+fi
+
+echo "Starting ... " >> /var/log/cron.log
+cron && tail -f /var/log/cron.log
+

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+/certbot-auto renew
+
+mkdir -p /etc/letsencrypt/nginx-certs
+cp -Lr /etc/letsencrypt/live/* /etc/letsencrypt/nginx-certs/ 
+
+
