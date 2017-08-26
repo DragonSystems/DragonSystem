@@ -1,6 +1,6 @@
 ![](http://i.imgur.com/NjzAc7S.png)
 
-The dragon system brings together best of breed technologies to form a developemnt framework and API suitable for all distributed crypto projects. 
+The Dragon System is a production class development framework and API for Ethereum web apps.
 
 * Ethereum
 * Polymer
