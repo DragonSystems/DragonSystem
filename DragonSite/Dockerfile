@@ -5,7 +5,6 @@ RUN apt-get update && \
 ENV HOME /root  
 COPY bower.json ./
 COPY index.html ./
-COPY keythereum.min.js ./
 COPY socket.io.js ./
 COPY manifest.json ./
 COPY package.json ./
