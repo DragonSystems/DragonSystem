@@ -18,6 +18,8 @@
   "homepage": "https://github.com/kiyokocrypto/DragonStore#readme",
   "dependencies": {
     "gun": "^0.8.3",
+    "express": "^4.15.4",
+    "express-fileupload": "^0.1.4",
     "ipfs-api": "^14.1.2"
   }
 }

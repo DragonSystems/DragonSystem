@@ -14,12 +14,11 @@ RUN ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods "[\"PUT\", \
 WORKDIR /
 COPY package.json package.json
 COPY server.js server.js
+COPY startup startup
 RUN npm install
 
 EXPOSE 5001
 EXPOSE 4001
 EXPOSE 9000
 
-CMD [ "node", "server.js" ]
-
-#ipfs daemon needs starting with a shell script
+ENTRYPOINT /startup
