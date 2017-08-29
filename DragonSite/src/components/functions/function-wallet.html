@@ -1,0 +1,57 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<script src="dragon.min.js" async></script>
+
+<dom-module id="function-wallet">
+    <script>
+        class FunctionWallet extends Polymer.Element {
+            static get is() {
+                return 'function-wallet';
+            }
+
+            /**
+            * Get provate key from keyObject
+            * @param {password} password used to decrypt the key
+            * @param {keyObject} keyObject
+            * @return {privateKey} privateKey
+            */
+            recoverKey(password, keyObject) {
+                return new Promise((resolve, reject) => {
+                    dragon.key.recover(password, keyObject, (privateKey) => {
+                        resolve(privateKey);
+                    });
+                });
+            }
+
+            /**
+            * Get provate key from keyObject
+            * @param {password} password used to decrypt the key
+            * @return {keyObject} keyObject
+            */
+            createKey(password) {
+                return new Promise((resolve, reject) => {
+                    var options = {
+                        kdf: 'pbkdf2',
+                        cipher: 'aes-128-ctr',
+                        kdfparams: {
+                            c: 262144,
+                            dklen: 32,
+                            prf: 'hmac-sha256',
+                        },
+                    };
+                    const dk = dragon.key.create({
+                        keyBytes: 32,
+                        ivBytes: 16,
+                    });
+                    dragon.key.dump(password,
+                        dk.privateKey,
+                        dk.salt,
+                        dk.iv,
+                        options, (keyObject) => {
+                            resolve(keyObject);
+                        });
+                });
+            }
+        }
+        window.customElements.define(FunctionWallet.is, FunctionWallet);
+    </script>
+</dom-module>

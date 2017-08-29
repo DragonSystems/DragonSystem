@@ -1,0 +1,55 @@
+
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="functions/function-wallet.html">
+
+<dom-module id="create-wallet">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+        </style>
+        <div class="container">
+            <paper-input char-counter label="Password" value="{{password}}"></paper-input>
+            <paper-button on-click="_createWallet">Create Wallet</paper-button>
+            <function-wallet id="wallet"></function-wallet>
+        </div>
+    </template>
+    <script>
+        class CreateWallet extends Polymer.mixinBehaviors([
+                Polymer.AppLocalizeBehavior,
+            ],
+            Polymer.Element
+        ) {
+            static get is() {
+                return 'create-wallet';
+            }
+            static get properties() {
+                return {
+                    /**
+                    * Loading indicates if the componant is loading
+                    * @type {Boolean}
+                    */
+                    loading: {
+                        type: Boolean,
+                        value: false,
+                        notify: true,
+                    },
+                };
+            }
+
+            _createWallet() {
+                if(this.password){
+                    this.$.wallet.createKey(this.password)
+                    .then((data) => {
+                        console.log(data)
+                    })
+                }
+            }
+        }
+        window.customElements.define(CreateWallet.is, CreateWallet);
+    </script>
+</dom-module>
+
