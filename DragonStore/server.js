@@ -1,41 +1,51 @@
 const express = require('express')
 const app = express();
-
-// Connect to IPFS
+const fileUpload = require('express-fileupload');
 const ipfsAPI = require('ipfs-api')
-const ipfs = ipfsAPI({host: 'localhost', port: '5001', protocol: 'http'})
+const ipfs = ipfsAPI({host: '0.0.0.0', port: '5001', protocol: 'http'})
 
-// If we want to set a file, we should post the file to http://localhost:9000/set
-app.get('/set', function (req, res) {
+let limit_in_bytes = 1024 * 100;
+
+app.use(fileUpload({
+    saveFileNames: true,
+    preserveExtension: true
+}));
+
+app.post('/set', function (req, res) {
     // Check the file is under 100k
-
-    // Save the file to IPFS
-    arr.push(filePair)
-    ipfs.files.add(file, (err, res) => {
-        // Once added pin the hash
-        pinHash(res[0]);
-        res.send(res[0]);
+    if (!req.files) {
+        return res.send({success: false, error: 'No files were selected to upload in field \'file\''});
+    }
+    if(req.files.file.data.length > limit_in_bytes) {
+        return res.json({success: false, error: `The field 'file' cannot be more than ${limit_in_bytes / 1024}kb in size`});
+    }
+    
+    ipfs.files.add([{
+        path: req.files.file.name,
+        content: req.files.file.data
+    }], (err, resp) => {
+        if(err) 
+            return res.send({success: false, error: 'Unable to save file', err});
+        pinHash(resp[0].hash);
+        res.send({success: true, file: {
+            path: resp[0].path,
+            hash: resp[0].hash,
+            size: resp[0].size
+        }});
     })
+    
 })
 
-// If we want to set a file, we should get the file to http://localhost:9000/df789g79f8g7d9f7g9dfg8dssdsdf
-app.get('/get', function (req, res) {
-    // isolate the hash from the GET url
-
-    // is ethe hash to ge tthe file from IPFS
-
-    // Check the file is under 100k
-    res.send(file)
-})
-
-// Whenever we add a file we should pin it
-function pinHash(IPFSHash){
-    ipfs.pin.add(IPFSHash, function(err, res) {
-        console.log(res);
+app.get('/get/:hash', function (req, res) {
+    var hash = req.params.hash;
+    ipfs.files.get(hash, function (err, stream) {
+        stream.on('data', (file) => {
+            file.content.pipe(res);
+        });
     });
-}
+});
 
 const PORT = 9000;
 const HOST = '0.0.0.0';
 
-server.listen(PORT, HOST);
+app.listen(PORT, HOST);
