@@ -4,7 +4,10 @@ var figlet = require('figlet');
 var chalk = require('chalk');
 var inquirer = require('inquirer');
 var shell = require('shelljs');
+var path = require('path');
+var os = require('os');
 
+var homeDir = path.join(os.homedir(), ".dragon");
 var environment = "Desktop"
 var debug = false;
 var site = "";
@@ -12,20 +15,20 @@ var socket = "";
 var apiKey = "";
 var dockerRegistry = "";
 
-//figlet.text('    dragon system    ', {
-//  font: 'Ogre',
-//  horizontalLayout: 'default',
-//  verticalLayout: 'default'
-//}, function(err, data) {
-//  if(err){
-//    console.log('Something went wrong...');
-//    console.dir(err);
-//    return;
-//  }
-//  console.log(chalk.bold.hex('#FF0033')(data));
-//  console.log(chalk.hex('#C8C420')('                                                                   v0.01'));
+figlet.text('    dragon system    ', {
+  font: 'Ogre',
+  horizontalLayout: 'default',
+  verticalLayout: 'default'
+}, function(err, data) {
+  if(err){
+    console.log('Something went wrong...');
+    console.dir(err);
+    return;
+  }
+  console.log(chalk.bold.hex('#FF0033')(data));
+  console.log(chalk.hex('#C8C420')('                                                                   v0.01'));
   installWhere();
-//});
+});
 
 function installWhere(){
     inquirer.prompt([
@@ -75,6 +78,11 @@ function getUserInputs() {
   inquirer.prompt([
   {
     type: 'input',
+    name: 'apiKey',
+    message: 'NS1 API key:'
+  },
+  {
+    type: 'input',
     name: 'siteHostname',
     message: 'Site domain name:'
   },
@@ -82,11 +90,6 @@ function getUserInputs() {
     type: 'input',
     name: 'socketHostname',
     message: 'Socket domain name:'
-  },
-  {
-    type: 'input',
-    name: 'apiKey',
-    message: 'NS1 API key:'
   },
   {
     type: 'list',
@@ -113,15 +116,15 @@ function validateUserInputs(answers) {
   apiKey = answers.apiKey;
   debug = answers.debug;
 
-  console.log("===========================================");
-  console.log("Site: " + site);
-  console.log("socket: " + socket);
-  console.log("API Key: " + apiKey);
-  if(debug == 'Enable'){
-    debug = true;
-    console.log("Debug mode: " + debug);
-  }
-  console.log("===========================================");
+//  console.log("===========================================");
+//  console.log("Site: " + site);
+//  console.log("socket: " + socket);
+//  console.log("API Key: " + apiKey);
+//  if(debug == 'Enable'){
+//    debug = true;
+//    console.log("Debug mode: " + debug);
+//  }
+//  console.log("===========================================");
   inquirer.prompt([
   {
     type: 'list',
@@ -148,6 +151,16 @@ function validateUserInputs(answers) {
 
 function updatePlatformEnv() {
   console.log("Updating configurations ... ");
+  shell.mkdir('-p', homeDir)
+  shell.cd(homeDir);
+  shell.cp(path.join(__dirname, "platform.env.example"), path.join(homeDir, "platform.env"));
+  shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
+  shell.ln('-s', path.join(__dirname, "DragonCerts"), path.join(homeDir, "DragonCerts"))
+  shell.ln('-s', path.join(__dirname, "DragonChain"), path.join(homeDir, "DragonChain"))
+  shell.ln('-s', path.join(__dirname, "DragonProxy"), path.join(homeDir, "DragonProxy"))
+  shell.ln('-s', path.join(__dirname, "DragonSite"), path.join(homeDir, "DragonSite"))
+  shell.ln('-s', path.join(__dirname, "DragonSockets"), path.join(homeDir, "DragonSockets"))
+  shell.ln('-s', path.join(__dirname, "DragonStore"), path.join(homeDir, "DragonStore"))
   if(debug == "false"){
     shell.sed('-i', 'DEBUG=.*', "#DEBUG=1", 'platform.env');
   }
@@ -170,9 +183,10 @@ function runCompose(build){
     console.log("Starting up docker containers ... ");
     shell.exec('docker-compose up -d');
   } else {
-    console.log("Pulling docker images from " + dockerRegistry + " ... ");
-    shell.exec('docker-compose pull');
+    //console.log("Pulling docker images from " + dockerRegistry + " ... ");
+    //shell.exec('docker-compose pull');
     console.log("Starting up docker containers ... ");
-    shell.exec('docker-compose up -d --no-build');
+    //shell.exec('docker-compose up -d');
+    shell.exec('docker-compose up');
   }
 }

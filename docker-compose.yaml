@@ -7,7 +7,7 @@ services:
     env_file:
       - platform.env
     volumes:
-      - ./data/ssl:/etc/letsencrypt
+      - ~/.dragon/ssl:/etc/letsencrypt
 
   site:
     build:
@@ -46,7 +46,7 @@ services:
     env_file:
       - platform.env
     volumes:
-      - ./data/ssl/nginx-certs:/etc/nginx/ssl
+      - ~/.dragon/ssl/nginx-certs:/etc/nginx/ssl
     ports:
       - "80:80"
       - "443:443"
@@ -55,6 +55,7 @@ services:
       - site
       - socket
     links:
+      - certs
       - site
       - socket
  

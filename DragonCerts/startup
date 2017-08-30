@@ -33,5 +33,6 @@ if [[ ! -d "/etc/letsencrypt/live" ]]; then
 fi
 
 echo "Starting ... " >> /var/log/cron.log
+python -m SimpleHTTPServer 8000 &
 cron && tail -f /var/log/cron.log
 
