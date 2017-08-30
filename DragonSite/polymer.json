@@ -5,6 +5,7 @@
     "src/my-view1.html",
     "src/my-view2.html",
     "src/my-view3.html",
+    "src/my-create-wallet.html",
     "src/my-view404.html"
   ],
   "sources": [
@@ -15,8 +16,7 @@
   "extraDependencies": [
     "manifest.json",
     "bower_components/webcomponentsjs/*.js",
-    "socket.io.js",
-    "keythereum.min.js"
+    "socket.io.js"
   ],
   "lint": {
     "rules": ["polymer-2"]
@@ -29,12 +29,12 @@
     {
       "preset": "es6-bundled",
       "basePath": true,
-      "bundle": {"excludes": ["socket.io.js", "keythereum.min.js"]}
+      "bundle": {"excludes": ["socket.io.js"]}
     },
     {
       "preset": "es5-bundled",
       "basePath": true,
-      "bundle": {"excludes": ["socket.io.js", "keythereum.min.js"]}
+      "bundle": {"excludes": ["socket.io.js"]}
     }
   ]
 }
