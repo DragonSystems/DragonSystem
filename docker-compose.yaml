@@ -1,13 +1,17 @@
 version: "3.3"
 services:
   certs: 
+    build:
+      DragonCerts
     image: dragon-certs
     env_file:
       - platform.env
     volumes:
-      - ./data/ssl:/etc/letsencrypt
+      - ~/.dragon/ssl:/etc/letsencrypt
 
   site:
+    build:
+      DragonSite
     image: dragon-site
     env_file:
       - platform.env
@@ -15,6 +19,8 @@ services:
       - certs
 
   store:
+    build:
+      DragonStore
     image: dragon-store
     env_file:
       - platform.env
@@ -22,6 +28,8 @@ services:
       - certs
 
   socket:
+    build:
+      DragonSockets
     image: dragon-socket
     env_file:
       - platform.env
@@ -32,11 +40,13 @@ services:
       - store
 
   nginx:
+    build:
+      DragonProxy
     image: dragon-proxy
     env_file:
       - platform.env
     volumes:
-      - ./data/ssl/nginx-certs:/etc/nginx/ssl
+      - ~/.dragon/ssl/nginx-certs:/etc/nginx/ssl
     ports:
       - "80:80"
       - "443:443"
@@ -45,6 +55,7 @@ services:
       - site
       - socket
     links:
+      - certs
       - site
       - socket
  

@@ -4,10 +4,12 @@ set -e
 
 generate_certs() {
   echo -e "Generating cert for domain: $1 ... " 
+  chmod 640 /nsone.ini
   if [ -z ${DEBUG} ]; then
     /certbot-auto certonly --dns-nsone \
       --dns-nsone-credentials /nsone.ini \
       --dns-nsone-propagation-seconds 60 \
+      --non-interactive \
       --agree-tos \
       --email email@drageth.com \
       -d $1
@@ -16,6 +18,7 @@ generate_certs() {
     /certbot-auto certonly --dns-nsone \
       --dns-nsone-credentials /nsone.ini \
       --dns-nsone-propagation-seconds 60 \
+      --non-interactive \
       --agree-tos \
       --email email@drageth.com \
       --server https://acme-staging.api.letsencrypt.org/directory \

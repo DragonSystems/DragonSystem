@@ -3,6 +3,11 @@
 set -e
 #set -ex
 
+until curl -so /dev/null certs:8000 --connect-timeout 2; do
+  echo "Waiting for cert generation ..."
+  sleep 4
+done
+
 echo "Reading environment variables ..."
 if [[ -z "${SITE_HOSTNAME}" ]]; then
   echo "Set \"SITE_HOSTNAME\" environment variable."

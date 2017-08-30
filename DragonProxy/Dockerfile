@@ -28,6 +28,9 @@ RUN ln -s /etc/nginx/sites-available/site /etc/nginx/sites-enabled/
 RUN ln -s /etc/nginx/sites-available/socket /etc/nginx/sites-enabled/
 RUN openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
 RUN chown -R www-data:www-data /data
+
+RUN apt-get update && apt-get install -y curl
+
 # We are going to exclude cert generation from docker image
 # So no need of following ...
 #COPY nsone.ini nsone.ini
