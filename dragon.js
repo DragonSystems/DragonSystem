@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-var program = require('commander');
+
+var cmd = require('commander');
 var figlet = require('figlet');
 var chalk = require('chalk');
 var inquirer = require('inquirer');
@@ -15,20 +16,31 @@ var socket = "";
 var apiKey = "";
 var dockerRegistry = "";
 
-figlet.text('    dragon system    ', {
-  font: 'Ogre',
-  horizontalLayout: 'default',
-  verticalLayout: 'default'
-}, function(err, data) {
-  if(err){
-    console.log('Something went wrong...');
-    console.dir(err);
-    return;
-  }
-  console.log(chalk.bold.hex('#FF0033')(data));
-  console.log(chalk.hex('#C8C420')('                                                                   v0.01'));
-  installWhere();
-});
+cmd.option('ps', 'Show running status')
+  .option('run', 'Run dockers')
+  .option('logs', 'Get docker logs')
+  .option('stop', 'Stop all running dockers')
+  .option('kill', 'Forcefully stop all running dockers')
+  .option('rm', 'Clear all stopped docker containers')
+  .version('0.1.0', '-v, --version', 'Output the version number')
+  .parse(process.argv);
+
+if (process.argv.length == 2) {
+  figlet.text('    dragon system    ', {
+    font: 'Ogre',
+    horizontalLayout: 'default',
+    verticalLayout: 'default'
+  }, function(err, data) {
+    if(err){
+      console.log('Something went wrong...');
+      console.dir(err);
+      return;
+    }
+    console.log(chalk.bold.hex('#FF0033')(data));
+    console.log(chalk.hex('#C8C420')('                                                                   v0.01'));
+    installWhere();
+  });
+}
 
 function installWhere(){
     inquirer.prompt([
@@ -116,15 +128,6 @@ function validateUserInputs(answers) {
   apiKey = answers.apiKey;
   debug = answers.debug;
 
-//  console.log("===========================================");
-//  console.log("Site: " + site);
-//  console.log("socket: " + socket);
-//  console.log("API Key: " + apiKey);
-//  if(debug == 'Enable'){
-//    debug = true;
-//    console.log("Debug mode: " + debug);
-//  }
-//  console.log("===========================================");
   inquirer.prompt([
   {
     type: 'list',
@@ -155,12 +158,12 @@ function updatePlatformEnv() {
   shell.cd(homeDir);
   shell.cp(path.join(__dirname, "platform.env.example"), path.join(homeDir, "platform.env"));
   shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
-  shell.ln('-s', path.join(__dirname, "DragonCerts"), path.join(homeDir, "DragonCerts"))
-  shell.ln('-s', path.join(__dirname, "DragonChain"), path.join(homeDir, "DragonChain"))
-  shell.ln('-s', path.join(__dirname, "DragonProxy"), path.join(homeDir, "DragonProxy"))
-  shell.ln('-s', path.join(__dirname, "DragonSite"), path.join(homeDir, "DragonSite"))
-  shell.ln('-s', path.join(__dirname, "DragonSockets"), path.join(homeDir, "DragonSockets"))
-  shell.ln('-s', path.join(__dirname, "DragonStore"), path.join(homeDir, "DragonStore"))
+  shell.ln('-sf', path.join(__dirname, "DragonCerts"), path.join(homeDir, "DragonCerts"))
+  shell.ln('-sf', path.join(__dirname, "DragonChain"), path.join(homeDir, "DragonChain"))
+  shell.ln('-sf', path.join(__dirname, "DragonProxy"), path.join(homeDir, "DragonProxy"))
+  shell.ln('-sf', path.join(__dirname, "DragonSite"), path.join(homeDir, "DragonSite"))
+  shell.ln('-sf', path.join(__dirname, "DragonSockets"), path.join(homeDir, "DragonSockets"))
+  shell.ln('-sf', path.join(__dirname, "DragonStore"), path.join(homeDir, "DragonStore"))
   if(debug == "false"){
     shell.sed('-i', 'DEBUG=.*', "#DEBUG=1", 'platform.env');
   }
@@ -175,18 +178,42 @@ function runCompose(build){
   if(environment == "Desktop"){
     console.log("Building docker images ... ");
     shell.exec('docker-compose build');
-//  shell.exec('docker-compose build', function(code, stdout, stderr) {
-//   // console.log('Exit code:', code);
-//   // console.log('Program output:', stdout);
-//   // console.log('Program stderr:', stderr);
-//  })
     console.log("Starting up docker containers ... ");
     shell.exec('docker-compose up -d');
   } else {
     //console.log("Pulling docker images from " + dockerRegistry + " ... ");
     //shell.exec('docker-compose pull');
     console.log("Starting up docker containers ... ");
-    //shell.exec('docker-compose up -d');
-    shell.exec('docker-compose up');
+    shell.exec('docker-compose up -d');
   }
+}
+
+if (cmd.ps) {
+  shell.cd(homeDir);
+  shell.exec('docker-compose ps');
+}
+
+if (cmd.run) {
+  shell.cd(homeDir);
+  shell.exec('docker-compose up -d');
+}
+
+if (cmd.stop) {
+  shell.cd(homeDir);
+  shell.exec('docker-compose stop');
+}
+
+if (cmd.kill) {
+  shell.cd(homeDir);
+  shell.exec('docker-compose kill');
+}
+
+if (cmd.rm) {
+  shell.cd(homeDir);
+  shell.exec('docker-compose rm -f');
+}
+
+if (cmd.logs) {
+  shell.cd(homeDir);
+  shell.exec('docker-compose logs -f');
 }
