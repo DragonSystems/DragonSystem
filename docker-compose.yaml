@@ -39,7 +39,7 @@ services:
     links:
       - store
 
-  nginx:
+  proxy:
     build:
       DragonProxy
     image: dragon-proxy
