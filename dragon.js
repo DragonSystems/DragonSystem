@@ -8,6 +8,8 @@ var shell = require('shelljs');
 var validator = require('validator');
 var path = require('path');
 var os = require('os');
+var sleep = require('system-sleep');
+var ProgressBar = require('progress');
 
 var homeDir = path.join(os.homedir(), ".dragon");
 var environment = "Desktop"
@@ -19,6 +21,7 @@ var dockerRegistry = "";
 
 cmd.option('ps', 'Show running status')
   .option('run', 'Run dockers')
+  .option('build', 'Build dockers')
   .option('logs', 'Get docker logs')
   .option('stop', 'Stop all running dockers')
   .option('kill', 'Forcefully stop all running dockers')
@@ -186,7 +189,25 @@ function runCompose(build){
 
   if(environment == "Desktop"){
     console.log("Building docker images ... ");
-    shell.exec('docker-compose build');
+  shell.cd(homeDir);
+  var bar = new ProgressBar('Building docker images - :name [:bar] :percent', {total: 50});
+  bar.tick(1, {'name': 'certs'});
+  sleep(1000);
+  shell.exec('docker-compose build certs', {silent:true});
+  bar.tick(9, {'name': 'proxy'});
+  sleep(1);
+  shell.exec('docker-compose build proxy', {silent:true});
+  bar.tick(10, {'name': 'site'});
+  sleep(1);
+  shell.exec('docker-compose build site', {silent:true});
+  bar.tick(10, {'name': 'socket'});
+  sleep(1);
+  shell.exec('docker-compose build socket', {silent:true});
+  bar.tick(10, {'name': 'store'});
+  sleep(1);
+  shell.exec('docker-compose build store', {silent:true});
+  bar.tick(10, {'name': 'store'});
+  sleep(1);
     console.log("Starting up docker containers ... ");
     shell.exec('docker-compose up -d');
     console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
@@ -212,6 +233,28 @@ if (cmd.ps) {
 if (cmd.run) {
   shell.cd(homeDir);
   shell.exec('docker-compose up -d');
+}
+
+if (cmd.build) {
+  shell.cd(homeDir);
+  var bar = new ProgressBar('Building docker images - :name [:bar] :percent', {total: 50});
+  bar.tick(1, {'name': 'certs'});
+  sleep(1000);
+  shell.exec('docker-compose build certs', {silent:true});
+  bar.tick(9, {'name': 'proxy'});
+  sleep(1);
+  shell.exec('docker-compose build proxy', {silent:true});
+  bar.tick(10, {'name': 'site'});
+  sleep(1);
+  shell.exec('docker-compose build site', {silent:true});
+  bar.tick(10, {'name': 'socket'});
+  sleep(1);
+  shell.exec('docker-compose build socket', {silent:true});
+  bar.tick(10, {'name': 'store'});
+  sleep(1);
+  shell.exec('docker-compose build store', {silent:true});
+  bar.tick(10, {'name': 'store'});
+  sleep(1);
 }
 
 if (cmd.stop) {

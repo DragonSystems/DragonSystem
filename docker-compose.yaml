@@ -46,7 +46,7 @@ services:
       - store
       - parity
 
-  nginx:
+  proxy:
     build:
       DragonProxy
     image: dragon-proxy
