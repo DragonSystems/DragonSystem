@@ -5,6 +5,7 @@ var figlet = require('figlet');
 var chalk = require('chalk');
 var inquirer = require('inquirer');
 var shell = require('shelljs');
+var validator = require('validator');
 var path = require('path');
 var os = require('os');
 
@@ -22,6 +23,7 @@ cmd.option('ps', 'Show running status')
   .option('stop', 'Stop all running dockers')
   .option('kill', 'Forcefully stop all running dockers')
   .option('rm', 'Clear all stopped docker containers')
+  .option('push', 'Push build docker images to a docker registry')
   .version('0.1.0', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
@@ -62,17 +64,6 @@ function installWhere(){
             if(environment == 'Desktop'){
                 installDesktop();
             } else {
-                //inquirer.prompt([
-                //{
-                //  type: 'input',
-                //  name: 'registry',
-                //  message: 'Docker registry :',
-                //  default: function () {
-                //    return 'local';
-                //  }
-                //}]).then(function (answers) {
-                //  dockerRegistry = answers.registry;
-                //});
                 installServer();
             }
         });
@@ -91,17 +82,35 @@ function getUserInputs() {
   {
     type: 'input',
     name: 'apiKey',
-    message: 'NS1 API key:'
+    message: 'NS1 API key:',
+    validate: function(str) {
+      if (validator.isByteLength(str, 20, 20)) {
+        return true;
+      }
+      return "Please check the API key again ... "
+    }
   },
   {
     type: 'input',
     name: 'siteHostname',
-    message: 'Site domain name:'
+    message: 'Site domain name:',
+    validate: function(str) {
+      if (validator.isFQDN(str)) {
+        return true;
+      }
+      return "Please enter a fully qualified domain name."
+    }
   },
   {
     type: 'input',
     name: 'socketHostname',
-    message: 'Socket domain name:'
+    message: 'Socket domain name:',
+    validate: function(str) {
+      if (validator.isFQDN(str)) {
+        return true;
+      }
+      return "Please enter a fully qualified domain name."
+    }
   },
   {
     type: 'list',
@@ -180,11 +189,18 @@ function runCompose(build){
     shell.exec('docker-compose build');
     console.log("Starting up docker containers ... ");
     shell.exec('docker-compose up -d');
+    console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
+    console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
+    console.log(chalk.blue("Add following lines to the file"));
+    console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + site)));
+    console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + socket)));
+    console.log(chalk.blue("Save and exit using \'<Esc> :wq\'"));
   } else {
     //console.log("Pulling docker images from " + dockerRegistry + " ... ");
     //shell.exec('docker-compose pull');
     console.log("Starting up docker containers ... ");
     shell.exec('docker-compose up -d');
+    console.log(chalk.blue("Update DNS to point " + site + " and " + socket + " to this server."));
   }
 }
 
@@ -216,4 +232,62 @@ if (cmd.rm) {
 if (cmd.logs) {
   shell.cd(homeDir);
   shell.exec('docker-compose logs -f');
+}
+
+if (cmd.push) {
+  shell.cd(homeDir);
+  inquirer.prompt([
+  {
+    type: 'input',
+    name: 'registry',
+    message: 'Docker registry :'
+  },
+  {
+    type: 'input',
+    name: 'certsVersion',
+    message: 'dragon-certs version: ',
+    default: 'latest'
+  },
+  {
+    type: 'input',
+    name: 'proxyVersion',
+    message: 'dragon-proxy version: ',
+    default: 'latest'
+  },
+  {
+    type: 'input',
+    name: 'socketVersion',
+    message: 'dragon-socket version: ',
+    default: 'latest'
+  },
+  {
+    type: 'input',
+    name: 'siteVersion',
+    message: 'dragon-site version: ',
+    default: 'latest'
+  },
+  {
+    type: 'input',
+    name: 'storeVersion',
+    message: 'dragon-store version: ',
+    default: 'latest'
+  }]).then(function (answers) {
+    dockerRegistry = answers.registry;
+    certsDocker = dockerRegistry + "/dragon-certs:" + answers.certsVersion;
+    proxyDocker = dockerRegistry + "/dragon-proxy:" + answers.proxyVersion;
+    socketDocker = dockerRegistry + "/dragon-socket:" + answers.socketVersion;
+    siteDocker = dockerRegistry + "/dragon-site:" + answers.siteVersion;
+    storeDocker = dockerRegistry + "/dragon-store:" + answers.storeVersion;
+    shell.exec("docker tag dragon-certs " + certsDocker);
+    shell.exec("docker tag dragon-proxy " + proxyDocker);
+    shell.exec("docker tag dragon-socket " + socketDocker);
+    shell.exec("docker tag dragon-site " + siteDocker);
+    shell.exec("docker tag dragon-store " + storeDocker);
+    console.log("Pushing images to: " + dockerRegistry);
+    shell.exec("docker push " + certsDocker);
+    shell.exec("docker push " + proxyDocker);
+    shell.exec("docker push " + socketDocker);
+    shell.exec("docker push " + siteDocker);
+    shell.exec("docker push " + storeDocker);
+  });
 }
