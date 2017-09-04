@@ -27,6 +27,11 @@ services:
     depends_on:
       - certs
 
+  parity:
+    image: docker.io/parity/parity:v1.7.2
+    env_file:
+      - platform.env
+
   socket:
     build:
       DragonSockets
@@ -36,8 +41,10 @@ services:
     depends_on:
       - certs
       - store
+      - parity
     links:
       - store
+      - parity
 
   nginx:
     build:
