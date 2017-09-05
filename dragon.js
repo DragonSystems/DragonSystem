@@ -8,7 +8,6 @@ var shell = require('shelljs');
 var validator = require('validator');
 var path = require('path');
 var os = require('os');
-var fs = require('fs');
 var sleep = require('system-sleep');
 var ProgressBar = require('progress');
 var logger = require('winston');
@@ -58,47 +57,27 @@ if (process.argv.length == 2) {
 }
 
 function validateConfigs(){
-  if (fs.existsSync(confFile)) {
+  if (shell.test('-f', confFile)) {
     return true;
   }
   return false;
 }
 
 function installWhere(){
-    inquirer.prompt([
-        {
-            type: 'list',
-            message: 'Where are you installing the Dragon System?',
-            name: 'environment',
-            choices: [
-            {
-                name: 'Server'
-            },
-            {
-                name: 'Desktop'
-            }
-            ]
-        }
-        ]).then(function (answers) {
-            environment = answers.environment;
-            if(environment == 'Desktop'){
-                installDesktop();
-            } else {
-                installServer();
-            }
-        });
-}
-
-function installDesktop() {
-  getUserInputs();
-}
-
-function installServer() {
-  getUserInputs();
-}
-
-function getUserInputs() {
   inquirer.prompt([
+  {
+      type: 'list',
+      message: 'Where are you installing the Dragon System?',
+      name: 'environment',
+      choices: [
+      {
+          name: 'Server'
+      },
+      {
+          name: 'Desktop'
+      }
+      ]
+  },
   {
     type: 'input',
     name: 'apiKey',
@@ -152,6 +131,7 @@ function getUserInputs() {
 
 function validateUserInputs(answers) {
 
+  environment = answers.environment;
   site = answers.siteHostname;
   socket = answers.socketHostname;
   apiKey = answers.apiKey;
@@ -254,7 +234,7 @@ function buildDockerImages(){
   console.log("Building docker images ... ");
   logger.log("info", "Bilding docker images");
   shell.exec('docker-compose build', function(code, stdout, stderr) {
-    logger.log("info", stdout);
+    logger.log("info", "docker-compose build\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
       console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
@@ -320,8 +300,8 @@ function runCompose(build){
     buildDockerImages();
     console.log("Starting up docker containers ... ");
     logger.log("info", "Starting up docker containers");
-    shell.exec('docker-compose up -d', function(code, stdout, stderr) {
-      logger.log("info", "docker-compose up -d\n" + stdout);
+    shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+      logger.log("info", "docker-compose up -d --no-build\n" + stdout);
       if (code !== 0) {
         logger.log('error', "Error code: " + code + ", error : " + stderr);
         console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
@@ -346,8 +326,8 @@ function runCompose(build){
     });
     console.log("Starting up docker containers ... ");
     logger.log("info", "Starting up docker containers");
-    shell.exec('docker-compose up -d', function(code, stdout, stderr) {
-      logger.log("info", "docker-compose up -d\n" + stdout);
+    shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+      logger.log("info", "docker-compose up -d --no-build\n" + stdout);
       if (code !== 0) {
         logger.log('error', "Error code: " + code + ", error : " + stderr);
         console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
@@ -376,8 +356,8 @@ if (cmd.ps) {
 if (cmd.run) {
   if (validateConfigs()){
     shell.cd(homeDir);
-    shell.exec('docker-compose up -d', function(code, stdout, stderr) {
-      logger.log("info", "docker-compose up -d\n" + stdout);
+    shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+      logger.log("info", "docker-compose up -d --no-build\n" + stdout);
       if (code !== 0) {
         logger.log('error', "Error code: " + code + ", error : " + stderr);
         console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');

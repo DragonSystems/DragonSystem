@@ -15,7 +15,6 @@
     "chalk": "^2.1.0",
     "commander": "^2.11.0",
     "figlet": "^1.2.0",
-    "fs": "0.0.1-security",
     "inquirer": "^3.2.1",
     "os": "^0.1.1",
     "path": "^0.12.7",
