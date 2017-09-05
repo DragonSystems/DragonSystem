@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo "Reading environment variables ..." >> /var/log/cron.log
 if [[ -z "${SITE_HOSTNAME}" ]]; then
   echo "Set \"SITE_HOSTNAME\" environment variable." >> /var/log/cron.log
