@@ -10,6 +10,7 @@ var path = require('path');
 var os = require('os');
 var sleep = require('system-sleep');
 var ProgressBar = require('progress');
+var logger = require('winston');
 
 var homeDir = path.join(os.homedir(), ".dragon");
 var environment = "Desktop"
@@ -18,6 +19,13 @@ var site = "";
 var socket = "";
 var apiKey = "";
 var dockerRegistry = "";
+var logfile = path.join(homeDir, "dragon.log");
+shell.config.silent = true;
+
+shell.mkdir('-p', homeDir);
+
+logger.add(logger.transports.File, { filename: logfile });
+logger.remove(logger.transports.Console);
 
 cmd.option('ps', 'Show running status')
   .option('run', 'Run dockers')
@@ -37,8 +45,8 @@ if (process.argv.length == 2) {
     verticalLayout: 'default'
   }, function(err, data) {
     if(err){
-      console.log('Something went wrong...');
-      console.dir(err);
+      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      logger.log('error', err);
       return;
     }
     console.log(chalk.bold.hex('#FF0033')(data));
@@ -157,6 +165,7 @@ function validateUserInputs(answers) {
   ]).then(function (answers) {
     if(answers.install == 'Yes'){
       console.log("Starting install ...");
+      logger.log("info", "Starting install");
       updatePlatformEnv();
     } else {
       process.exit(0);
@@ -166,16 +175,16 @@ function validateUserInputs(answers) {
 
 function updatePlatformEnv() {
   console.log("Updating configurations ... ");
-  shell.mkdir('-p', homeDir)
+  logger.log("info", "Updating configurations");
   shell.cd(homeDir);
   shell.cp(path.join(__dirname, "platform.env.example"), path.join(homeDir, "platform.env"));
   shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
-  shell.ln('-sf', path.join(__dirname, "DragonCerts"), path.join(homeDir, "DragonCerts"))
-  shell.ln('-sf', path.join(__dirname, "DragonChain"), path.join(homeDir, "DragonChain"))
-  shell.ln('-sf', path.join(__dirname, "DragonProxy"), path.join(homeDir, "DragonProxy"))
-  shell.ln('-sf', path.join(__dirname, "DragonSite"), path.join(homeDir, "DragonSite"))
-  shell.ln('-sf', path.join(__dirname, "DragonSockets"), path.join(homeDir, "DragonSockets"))
-  shell.ln('-sf', path.join(__dirname, "DragonStore"), path.join(homeDir, "DragonStore"))
+  shell.ln('-sf', path.join(__dirname, "DragonCerts"), path.join(homeDir, "DragonCerts"));
+  shell.ln('-sf', path.join(__dirname, "DragonChain"), path.join(homeDir, "DragonChain"));
+  shell.ln('-sf', path.join(__dirname, "DragonProxy"), path.join(homeDir, "DragonProxy"));
+  shell.ln('-sf', path.join(__dirname, "DragonSite"), path.join(homeDir, "DragonSite"));
+  shell.ln('-sf', path.join(__dirname, "DragonSockets"), path.join(homeDir, "DragonSockets"));
+  shell.ln('-sf', path.join(__dirname, "DragonStore"), path.join(homeDir, "DragonStore"));
   if(debug == "false"){
     shell.sed('-i', 'DEBUG=.*', "#DEBUG=1", 'platform.env');
   }
@@ -185,31 +194,75 @@ function updatePlatformEnv() {
   runCompose();
 }
 
-function runCompose(build){
-
-  if(environment == "Desktop"){
-    console.log("Building docker images ... ");
-  shell.cd(homeDir);
+function buildDockerImages(){
+  console.log("Building docker images ... ");
+  logger.log("info", "Bilding docker images");
   var bar = new ProgressBar('Building docker images - :name [:bar] :percent', {total: 50});
   bar.tick(1, {'name': 'certs'});
   sleep(1000);
-  shell.exec('docker-compose build certs', {silent:true});
+  shell.exec('docker-compose build certs', function(code, stdout, stderr) {
+    logger.log("info", stdout);
+    if (code !== 0) {
+      logger.log('error', "Error code: " + code + ", error : " + stderr);
+      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+    }
+  });
   bar.tick(9, {'name': 'proxy'});
   sleep(1);
-  shell.exec('docker-compose build proxy', {silent:true});
+  shell.exec('docker-compose build proxy', function(code, stdout, stderr) {
+    logger.log("info", stdout);
+    if (code !== 0) {
+      logger.log('error', "Error code: " + code + ", error : " + stderr);
+      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+    }
+  });
   bar.tick(10, {'name': 'site'});
   sleep(1);
-  shell.exec('docker-compose build site', {silent:true});
+  shell.exec('docker-compose build site', function(code, stdout, stderr) {
+    logger.log("info", stdout);
+    if (code !== 0) {
+      logger.log('error', "Error code: " + code + ", error : " + stderr);
+      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+    }
+  });
   bar.tick(10, {'name': 'socket'});
   sleep(1);
-  shell.exec('docker-compose build socket', {silent:true});
+  shell.exec('docker-compose build socket', function(code, stdout, stderr) {
+    logger.log("info", stdout);
+    if (code !== 0) {
+      logger.log('error', "Error code: " + code + ", error : " + stderr);
+      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+    }
+  });
   bar.tick(10, {'name': 'store'});
   sleep(1);
-  shell.exec('docker-compose build store', {silent:true});
+  shell.exec('docker-compose build store', function(code, stdout, stderr) {
+    logger.log("info", stdout);
+    if (code !== 0) {
+      logger.log('error', "Error code: " + code + ", error : " + stderr);
+      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+    }
+  });
   bar.tick(10, {'name': 'store'});
   sleep(1);
+
+
+}
+
+function runCompose(build){
+
+  if(environment == "Desktop"){
+    shell.cd(homeDir);
+    buildDockerImages();
     console.log("Starting up docker containers ... ");
-    shell.exec('docker-compose up -d');
+    logger.log("info", "Starting up docker containers");
+    shell.exec('docker-compose up -d', function(code, stdout, stderr) {
+      logger.log("info", "docker-compose up -d\n" + stdout);
+      if (code !== 0) {
+        logger.log('error', "Error code: " + code + ", error : " + stderr);
+        console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      }
+    });
     console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
     console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
     console.log(chalk.blue("Add following lines to the file"));
@@ -218,63 +271,98 @@ function runCompose(build){
     console.log(chalk.blue("Save and exit using \'<Esc> :wq\'"));
   } else {
     //console.log("Pulling docker images from " + dockerRegistry + " ... ");
-    //shell.exec('docker-compose pull');
+    //logger.log("info", "Pulling docker images from " + dockerRegistry);
+    //shell.exec('docker-compose pull', function(code, stdout, stderr) {
+    //      logger.log("info", stdout);
+    //  if (code !== 0) {
+    //        logger.log('error', "Error code: " + code + ", error : " + stderr);
+    //        console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+    //    }
+    //});
     console.log("Starting up docker containers ... ");
-    shell.exec('docker-compose up -d');
+    logger.log("info", "Starting up docker containers");
+    shell.exec('docker-compose up -d', function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+        logger.log('error', "Error code: " + code + ", error : " + stderr);
+        console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      }
+    });
     console.log(chalk.blue("Update DNS to point " + site + " and " + socket + " to this server."));
   }
 }
 
 if (cmd.ps) {
   shell.cd(homeDir);
-  shell.exec('docker-compose ps');
+  shell.exec('docker-compose ps', function(code, stdout, stderr) {
+      console.log(stdout);
+      logger.log("info", "docker-compose ps\n " + stdout);
+      if (code !== 0) {
+        logger.log('error', "Error code: " + code + ", error : " + stderr);
+        console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      }
+    });
 }
 
 if (cmd.run) {
   shell.cd(homeDir);
-  shell.exec('docker-compose up -d');
+  shell.exec('docker-compose up -d', function(code, stdout, stderr) {
+      logger.log("info", "docker-compose up -d\n" + stdout);
+      if (code !== 0) {
+        logger.log('error', "Error code: " + code + ", error : " + stderr);
+        console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      }
+    });
 }
 
 if (cmd.build) {
   shell.cd(homeDir);
-  var bar = new ProgressBar('Building docker images - :name [:bar] :percent', {total: 50});
-  bar.tick(1, {'name': 'certs'});
-  sleep(1000);
-  shell.exec('docker-compose build certs', {silent:true});
-  bar.tick(9, {'name': 'proxy'});
-  sleep(1);
-  shell.exec('docker-compose build proxy', {silent:true});
-  bar.tick(10, {'name': 'site'});
-  sleep(1);
-  shell.exec('docker-compose build site', {silent:true});
-  bar.tick(10, {'name': 'socket'});
-  sleep(1);
-  shell.exec('docker-compose build socket', {silent:true});
-  bar.tick(10, {'name': 'store'});
-  sleep(1);
-  shell.exec('docker-compose build store', {silent:true});
-  bar.tick(10, {'name': 'store'});
-  sleep(1);
+  buildDockerImages();
 }
 
 if (cmd.stop) {
   shell.cd(homeDir);
-  shell.exec('docker-compose stop');
+  shell.exec('docker-compose stop', function(code, stdout, stderr) {
+      logger.log("info", "docker-compose stop\n" + stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
 }
 
 if (cmd.kill) {
   shell.cd(homeDir);
-  shell.exec('docker-compose kill');
+  shell.exec('docker-compose kill', function(code, stdout, stderr) {
+      logger.log("info", "docker-compose kill\n" + stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
 }
 
 if (cmd.rm) {
   shell.cd(homeDir);
-  shell.exec('docker-compose rm -f');
+  shell.exec('docker-compose rm -f', function(code, stdout, stderr) {
+      logger.log("info", "docker-compose rm -f\n" + stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
 }
 
 if (cmd.logs) {
   shell.cd(homeDir);
-  shell.exec('docker-compose logs -f');
+  shell.exec('docker-compose logs -f', function(code, stdout, stderr) {
+      console.log(stdout);
+      //logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
 }
 
 if (cmd.push) {
@@ -321,16 +409,77 @@ if (cmd.push) {
     socketDocker = dockerRegistry + "/dragon-socket:" + answers.socketVersion;
     siteDocker = dockerRegistry + "/dragon-site:" + answers.siteVersion;
     storeDocker = dockerRegistry + "/dragon-store:" + answers.storeVersion;
-    shell.exec("docker tag dragon-certs " + certsDocker);
-    shell.exec("docker tag dragon-proxy " + proxyDocker);
-    shell.exec("docker tag dragon-socket " + socketDocker);
-    shell.exec("docker tag dragon-site " + siteDocker);
-    shell.exec("docker tag dragon-store " + storeDocker);
-    console.log("Pushing images to: " + dockerRegistry);
-    shell.exec("docker push " + certsDocker);
-    shell.exec("docker push " + proxyDocker);
-    shell.exec("docker push " + socketDocker);
-    shell.exec("docker push " + siteDocker);
-    shell.exec("docker push " + storeDocker);
+    shell.exec("docker tag dragon-certs " + certsDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
+    shell.exec("docker tag dragon-proxy " + proxyDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
+    shell.exec("docker tag dragon-socket " + socketDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
+    shell.exec("docker tag dragon-site " + siteDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
+    shell.exec("docker tag dragon-store " + storeDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
+    console.log("Pushing images to: " + dockerRegistry + " ... ");
+    logger.log("info", "Pushing images to: " + dockerRegistry);
+    shell.exec("docker push " + certsDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
+    shell.exec("docker push " + proxyDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
+    shell.exec("docker push " + socketDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
+    shell.exec("docker push " + siteDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
+    shell.exec("docker push " + storeDocker, function(code, stdout, stderr) {
+      logger.log("info", stdout);
+      if (code !== 0) {
+            logger.log('error', "Error code: " + code + ", error : " + stderr);
+            console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+    });
   });
 }
