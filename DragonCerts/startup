@@ -27,10 +27,7 @@ fi
 
 sed -i "s/SSL_API_KEY/${SSL_API_KEY}/g" /nsone.ini
 
-if [[ ! -d "/etc/letsencrypt/live" ]]; then
-  echo -e "Certs directory does not exist ... "
-  /generate-certs.sh >> /var/log/cron.log
-fi
+/generate-certs.sh >> /var/log/cron.log
 
 echo "Starting ... " >> /var/log/cron.log
 python -m SimpleHTTPServer 8000 &
