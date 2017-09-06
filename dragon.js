@@ -11,22 +11,49 @@ var os = require('os');
 var sleep = require('system-sleep');
 var ProgressBar = require('progress');
 var logger = require('winston');
+var properties = require ("properties");
 
 shell.config.silent = true;
 var homeDir = path.join(os.homedir(), ".dragon");
 var environment = "Desktop"
-var debug = "";
-var site = "";
-var socket = "";
-var apiKey = "";
-var dockerRegistry = "";
+var debug = "Enable";
+var site = "www.example.com";
+var socket = "socket.example.com";
+var apiKey = "12345678901234567890";
+var dockerRegistry = "docker.io/kiyotocrypto";
+var siteVersion = "latest"
+var socketVersion = "latest"
+var storeVersion = "latest"
+var certsVersion = "latest"
+var proxyVersion = "latest"
 var logfile = path.join(homeDir, "dragon.log");
 var confFile = path.join(homeDir, ".env");
+var platformFile = path.join(homeDir, "platform.env");
 
 shell.mkdir('-p', homeDir);
 
 logger.add(logger.transports.File, {filename: logfile});
 logger.remove(logger.transports.Console);
+
+if (shell.test('-f', confFile)) {
+  properties.parse(confFile, {path: true}, function (error, data){
+    dockerRegistry = data.DOCKER_REGISTRY_BASE;
+    siteVersion = data.SITE_VERSION;
+    storeVersion = data.STORE_VERSION;
+    certsVersion = data.CERTS_VERSION;
+    proxyVersion = data.PROXY_VERSION;
+    socketVersion = data.SOCKET_VERSION;
+  });
+}
+
+if (shell.test('-f', platformFile)) {
+  properties.parse(platformFile, {path: true}, function (error, data){
+    debug = data.DEBUG;
+    apiKey = data.SSL_API_KEY;
+    site = data.SITE_HOSTNAME;
+    socket = data.SOCKET_HOSTNAME;
+  });
+}
 
 cmd.option('ps', 'Show running status')
   .option('run', 'Run dockers')
@@ -84,6 +111,7 @@ function installWhere(){
     type: 'input',
     name: 'apiKey',
     message: 'NS1 API key:',
+    default: apiKey,
     validate: function(str) {
       if (validator.isByteLength(str, 20, 20)) {
         return true;
@@ -95,6 +123,7 @@ function installWhere(){
     type: 'input',
     name: 'siteHostname',
     message: 'Site domain name:',
+    default: site,
     validate: function(str) {
       if (validator.isFQDN(str)) {
         return true;
@@ -106,6 +135,7 @@ function installWhere(){
     type: 'input',
     name: 'socketHostname',
     message: 'Socket domain name:',
+    default: socket,
     validate: function(str) {
       if (validator.isFQDN(str)) {
         return true;
@@ -117,6 +147,7 @@ function installWhere(){
     type: 'list',
     message: 'Debug mode enabled or disabled?',
     name: 'debug',
+    default: debug,
     choices: [
       {
           name: 'Enable'
@@ -177,11 +208,7 @@ function updatePlatformEnv() {
   shell.ln('-sf', path.join(__dirname, "DragonSite"), path.join(homeDir, "DragonSite"));
   shell.ln('-sf', path.join(__dirname, "DragonSockets"), path.join(homeDir, "DragonSockets"));
   shell.ln('-sf', path.join(__dirname, "DragonStore"), path.join(homeDir, "DragonStore"));
-  if(debug == "Disable"){
-    shell.sed('-i', 'DEBUG=.*', "#DEBUG=1", 'platform.env');
-  } else {
-    shell.sed('-i', '#DEBUG=.*', "DEBUG=1", 'platform.env');
-  }
+  shell.sed('-i', 'DEBUG=.*', "DEBUG=" + debug, 'platform.env');
   shell.sed('-i', 'SITE_HOSTNAME=.*', "SITE_HOSTNAME=" + site, 'platform.env');
   shell.sed('-i', 'SOCKET_HOSTNAME=.*', "SOCKET_HOSTNAME=" + socket, 'platform.env');
   shell.sed('-i', 'SSL_API_KEY=.*', "SSL_API_KEY=" + apiKey, 'platform.env');
@@ -302,7 +329,6 @@ function composeStop(){
 }
 
 function composeKill(){
-    console.log("info", "docker-compose kill");
   shell.exec('docker-compose kill', function(code, stdout, stderr) {
     console.log("info", "docker-compose kill");
     logger.log("info", "docker-compose kill\n" + stdout);
