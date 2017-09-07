@@ -283,6 +283,28 @@ function composeUp(){
   });
 }
 
+function composeBuildAndRun(){
+  console.log("Building docker images ... ");
+  logger.log("info", "Bilding docker images");
+  shell.exec('docker-compose build', function(code, stdout, stderr) {
+    logger.log("info", "docker-compose build\n" + stdout);
+    if (code !== 0) {
+      logger.log('error', "Error code: " + code + ", error : " + stderr);
+      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+    } else {
+      console.log("Starting up docker containers ... ");
+      logger.log("info", "Starting up docker containers");
+      shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+        logger.log("info", "docker-compose up -d --no-build\n" + stdout);
+        if (code !== 0) {
+          logger.log('error', "Error code: " + code + ", error : " + stderr);
+          console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+      });
+    }
+  });
+}
+
 function composePull(){
   console.log("Pulling docker images from " + dockerRegistry + " ... ");
   logger.log("info", "Pulling docker images from " + dockerRegistry);
@@ -291,6 +313,28 @@ function composePull(){
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
       console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+    }
+  });
+}
+
+function composePullAndRun(){
+  console.log("Pulling docker images from " + dockerRegistry + " ... ");
+  logger.log("info", "Pulling docker images from " + dockerRegistry);
+  shell.exec('docker-compose pull', function(code, stdout, stderr) {
+    logger.log("info", "docker-compose pull\n" + stdout);
+    if (code !== 0) {
+      logger.log('error', "Error code: " + code + ", error : " + stderr);
+      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+    } else {
+      console.log("Starting up docker containers ... ");
+      logger.log("info", "Starting up docker containers");
+      shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+        logger.log("info", "docker-compose up -d --no-build\n" + stdout);
+        if (code !== 0) {
+          logger.log('error', "Error code: " + code + ", error : " + stderr);
+          console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+        }
+      });
     }
   });
 }
@@ -372,18 +416,15 @@ function runCompose(build){
 
   if(environment == "Desktop"){
     shell.cd(homeDir);
-    composeBuild();
-    composeUp();
+    composeBuildAndRun();
     console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
     console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
     console.log(chalk.blue("Add following lines to the file"));
     console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + site)));
     console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + socket)));
     console.log(chalk.blue("Save and exit using \'<Esc> :wq\'"));
-
   } else {
-    composePull();
-    composeUp();
+    composePullAndRun();
     console.log(chalk.blue("Update DNS to point " + site + " and " + socket + " to this server."));
   }
 }
