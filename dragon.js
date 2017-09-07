@@ -64,6 +64,7 @@ cmd.option('ps', 'Show running status')
   .option('kill', 'Forcefully stop all running dockers')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
+  .option('pull', 'Pull builded docker images from a docker registry')
   .version('0.1.0', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
@@ -482,5 +483,12 @@ if (cmd.push) {
   if (validateConfigs()){
     shell.cd(homeDir);
     composePush();
+  }
+}
+
+if (cmd.pull) {
+  if (validateConfigs()){
+    shell.cd(homeDir);
+    composePull();
   }
 }
