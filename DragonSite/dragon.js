@@ -3,6 +3,9 @@ import { sha3, privateToAddress,  privateToPublic, publicToAddress, toChecksumAd
 import { createHash, randomBytes, createCipheriv, pbkdf2Sync, createDecipheriv } from 'crypto';
 import scrypt from 'scryptsy';
 import uuid from 'uuid';
+import Buffer from 'buffer';
+import QRCode from 'qrcode';
+
 
 export {
   sha3,
@@ -18,4 +21,5 @@ export {
   scrypt,
   uuid,
   Buffer,
+  QRCode,
 }

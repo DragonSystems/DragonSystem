@@ -42,6 +42,7 @@
                     const mac = dragon.sha3(Buffer.concat([derivedKey.slice(16, 32), new Buffer(ciphertext, 'hex')]));
                     resolve ({
                         fileName: ['UTC--', new Date().toJSON().replace(/:/g, '-'), '--', hexAddress].join(''),
+                        address: hexAddress,
                         privateKey: privateKey.toString('hex'),
                         utcKeystore: {
                             version: 3,
@@ -65,6 +66,18 @@
                             }
                         }
                     });
+                });
+            }
+
+            makeQRCode(data){
+                return new Promise((resolve, reject) => {
+                    dragon.QRCode.toDataURL(data,  (err, url) => {
+                        if(err){
+                            reject(err)
+                        } else {
+                            resolve(url)
+                        }
+                    })
                 });
             }
 
