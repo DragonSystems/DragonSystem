@@ -58,7 +58,7 @@ var getInterface = function() {
         verticalLayout: 'default'
       }, function(err, data) {
         if(err){
-          console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+          console.log('error', err);
           logger.log('error', err);
           return;
         }
@@ -278,7 +278,7 @@ function composeBuild(){
     logger.log("info", "docker-compose build\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      console.log('error', "Error code: " + code + ", error : " + stderr);
     }
   });
 }
@@ -290,7 +290,7 @@ function composeUp(){
     logger.log("info", "docker-compose up -d --no-build\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      console.log('error', "Error code: " + code + ", error : " + stderr);
     }
   });
 }
@@ -302,7 +302,7 @@ function composeBuildAndRun(){
     logger.log("info", "docker-compose build\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      console.log('error', "Error code: " + code + ", error : " + stderr);
     } else {
       console.log("Starting up docker containers ... ");
       logger.log("info", "Starting up docker containers");
@@ -310,7 +310,7 @@ function composeBuildAndRun(){
         logger.log("info", "docker-compose up -d --no-build\n" + stdout);
         if (code !== 0) {
           logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+          console.log('error', "Error code: " + code + ", error : " + stderr);
         } else {
           console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
           console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
@@ -331,7 +331,7 @@ function composePull(){
     logger.log("info", "docker-compose pull\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      console.log('error', "Error code: " + code + ", error : " + stderr);
     }
   });
 }
@@ -343,7 +343,7 @@ function composePullAndRun(){
     logger.log("info", "docker-compose pull\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      console.log('error', "Error code: " + code + ", error : " + stderr);
     } else {
       console.log("Starting up docker containers ... ");
       logger.log("info", "Starting up docker containers");
@@ -351,7 +351,7 @@ function composePullAndRun(){
         logger.log("info", "docker-compose up -d --no-build\n" + stdout);
         if (code !== 0) {
           logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+          console.log('error', "Error code: " + code + ", error : " + stderr);
         } else {
           console.log(chalk.blue("Update DNS to point " + site + " and " + socket + " to this server."));
         }
@@ -367,7 +367,7 @@ function composePush(){
     logger.log("info", "docker-compose push\n" + stdout);
     if (code !== 0) {
           logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+          console.log('error', "Error code: " + code + ", error : " + stderr);
       }
   });
 }
@@ -378,7 +378,7 @@ function composePs(){
     logger.log("info", "docker-compose ps\n " + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      console.log('error', "Error code: " + code + ", error : " + stderr);
     }
   });
 }
@@ -388,7 +388,7 @@ function composeStop(){
     logger.log("info", "docker-compose stop\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      console.log('error', "Error code: " + code + ", error : " + stderr);
     }
   });
 }
@@ -398,7 +398,7 @@ function composeKill(){
     logger.log("info", "docker-compose kill\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      console.log('error', "Error code: " + code + ", error : " + stderr);
     }
   });
 }
@@ -408,13 +408,13 @@ function composeRm(){
     logger.log("info", "docker-compose kill\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+      console.log('error', "Error code: " + code + ", error : " + stderr);
     } else {
       shell.exec('docker-compose rm -f', function(code, stdout, stderr) {
         logger.log("info", "docker-compose rm -f\n" + stdout);
         if (code !== 0) {
           logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+          console.log('error', "Error code: " + code + ", error : " + stderr);
         }
       })
     }
@@ -428,7 +428,7 @@ function composeLogs(log){
     console.log(stdout);
     if (code !== 0) {
           logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+          console.log('error', "Error code: " + code + ", error : " + stderr);
       }
   });
   } else {
@@ -436,7 +436,7 @@ function composeLogs(log){
     console.log(stdout);
     if (code !== 0) {
           logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('Something went wrong. Please check the log in \"' + logfile +  '\" for more info.');
+          console.log('error', "Error code: " + code + ", error : " + stderr);
       }
   });
   }
