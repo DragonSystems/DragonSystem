@@ -3,7 +3,7 @@
 set -e
 
 generate_certs() {
-  echo -e "Generating cert for domain: $1 ... " 
+  echo -e "Generating cert for domain: $1 ... " >> /var/log/cron.log
   chmod 640 /nsone.ini
   if [ "${DEBUG}" == "Disable" ]; then
     /certbot-auto certonly --dns-nsone \
@@ -14,7 +14,7 @@ generate_certs() {
       --email email@drageth.com \
       -d $1
   else
-    echo -e "Debug is enabled ... " 
+    echo -e "Debug is enabled ... " >> /var/log/cron.log
     /certbot-auto certonly --dns-nsone \
       --dns-nsone-credentials /nsone.ini \
       --dns-nsone-propagation-seconds 60 \
@@ -30,14 +30,14 @@ generate_certs() {
 
 if [[ -f "/etc/letsencrypt/live/${SITE_HOSTNAME}/fullchain.pem" 
       && -f "/etc/letsencrypt/live/${SITE_HOSTNAME}/privkey.pem" ]]; then
-  echo -e "Certs already exist for domain : ${SITE_HOSTNAME}"
+  echo -e "Certs already exist for domain : ${SITE_HOSTNAME}" >> /var/log/cron.log
 else
   generate_certs ${SITE_HOSTNAME}
 fi
 
 if [[ -f "/etc/letsencrypt/live/${SOCKET_HOSTNAME}/fullchain.pem" 
       && -f "/etc/letsencrypt/live/${SOCKET_HOSTNAME}/privkey.pem" ]]; then
-  echo -e "Certs already exist for domain : ${SOCKET_HOSTNAME}"
+  echo -e "Certs already exist for domain : ${SOCKET_HOSTNAME}" >> /var/log/cron.log
 else
   generate_certs ${SOCKET_HOSTNAME}
 fi
