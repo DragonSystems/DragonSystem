@@ -30,6 +30,16 @@
                 <paper-button toggles raised disabled="{{disabled}}" on-click="_continue">I Understand. Continue.</paper-button>
             </template>
 
+            <template is="dom-if" if="{{stateSaveKey}}">
+                    <h1>Save Your Private Key.</h1>
+                    <paper-button toggles raised on-click="_print">Print Paper Wallet</paper-button>
+                    <paper-input label="Private key" value="{{privateKey}}"></paper-input>
+                    <p><b>Do not lose it!</b> It cannot be recovered if you lose it.</p>
+                    <p><b>Do not share it!</b> Your funds will be stolen if you use this file on a malicious/phishing site.</p>
+                    <p><b>Make a backup!</b> Secure it like the millions of dollars it may one day be worth.</p>
+                    <paper-button toggles raised disabled="{{disabled}}" on-click="_continue">Done.</paper-button>
+            </template>
+
         </div>
     </template>
     <script>
