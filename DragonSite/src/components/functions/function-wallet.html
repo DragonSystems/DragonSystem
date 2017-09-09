@@ -46,7 +46,7 @@
                         utcKeystore: {
                             version: 3,
                             id: id,
-                            hexAddress,
+                            address: hexAddress,
                             Crypto: {
                                 ciphertext: ciphertext.toString('hex'),
                                 cipherparams: { 
@@ -57,6 +57,9 @@
                                 kdfparams:{
                                     dklen: 32,
                                     salt: salt.toString('hex'),
+                                    "n": 1024,
+                                    "r": 8,
+                                    "p": 1
                                 },
                                 mac: mac.toString('hex'),
                             }
