@@ -5,7 +5,7 @@ set -e
 generate_certs() {
   echo -e "Generating cert for domain: $1 ... " 
   chmod 640 /nsone.ini
-  if [ -z ${DEBUG} ]; then
+  if [ "${DEBUG}" == "Disable" ]; then
     /certbot-auto certonly --dns-nsone \
       --dns-nsone-credentials /nsone.ini \
       --dns-nsone-propagation-seconds 60 \

@@ -15,13 +15,15 @@
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
     "babel-preset-es2015": "^6.24.1",
-    "ethereumjs-tx": "^1.3.3",
+    "babel-preset-flow": "^6.23.0",
+    "buffer": "^5.0.7",
     "ethereumjs-util": "^5.1.2",
-    "keythereum": "~1.0.2",
-    "moment": "^2.18.1",
     "polymer-cli": "^1.3.1",
+    "qrcode": "^0.9.0",
+    "scryptsy": "^2.0.0",
     "uglify-es": "github:mishoo/UglifyJS2#harmony",
     "uglifyjs-webpack-plugin": "^1.0.0-beta.2",
+    "uuid": "^3.1.0",
     "web3": "^1.0.0-beta.18"
   },
   "scripts": {
@@ -30,7 +32,7 @@
     "test": "polymer test",
     "start": "node server.js",
     "test:integration": "polymer build",
-    "build:webpack": "webpack",
+    "webpack": "webpack",
     "build": "polymer build",
     "serve": "polymer serve"
   },

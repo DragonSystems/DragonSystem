@@ -7,50 +7,81 @@
             static get is() {
                 return 'function-wallet';
             }
-
             /**
-            * Get provate key from keyObject
-            * @param {password} password used to decrypt the key
-            * @param {keyObject} keyObject
-            * @return {privateKey} privateKey
-            */
-            recoverKey(password, keyObject) {
-                return new Promise((resolve, reject) => {
-                    dragon.key.recover(password, keyObject, (privateKey) => {
-                        resolve(privateKey);
-                    });
-                });
-            }
-
-            /**
-            * Get provate key from keyObject
-            * @param {password} password used to decrypt the key
+            * create a provate key and address
             * @return {keyObject} keyObject
             */
             createKey(password) {
                 return new Promise((resolve, reject) => {
-                    var options = {
-                        kdf: 'pbkdf2',
-                        cipher: 'aes-128-ctr',
-                        kdfparams: {
-                            c: 262144,
-                            dklen: 32,
-                            prf: 'hmac-sha256',
-                        },
-                    };
-                    const dk = dragon.key.create({
-                        keyBytes: 32,
-                        ivBytes: 16,
-                    });
-                    dragon.key.dump(password,
-                        dk.privateKey,
-                        dk.salt,
-                        dk.iv,
-                        options, (keyObject) => {
-                            resolve(keyObject);
-                        });
+                    const privateKey = dragon.randomBytes(32);
+                    const publicKey = dragon.privateToPublic(privateKey);
+                    const address = dragon.publicToAddress(publicKey);
+                    const hexPrivateKey = privateKey.toString('hex');
+                    const hexAddress = dragon.toChecksumAddress(`0x${address.toString('hex')}`);
+                    if(privateKey.length === 32 && hexPrivateKey.length === 64 && hexAddress.length === 42){
+                        resolve(this.utcKeystore(privateKey, hexAddress, password));
+                    } else {
+                        reject();
+                    }
                 });
             }
+
+            /**
+            * create a utc Keystore
+            * @return {keyObject} keyObject
+            */
+            utcKeystore(privateKey, hexAddress, password) {
+                return new Promise((resolve, reject) => {
+                    const id = dragon.uuid.v4({random: dragon.randomBytes(16)})
+                    const salt = dragon.randomBytes(32);
+                    const iv = dragon.randomBytes(16);
+                    const Buffer = dragon.Buffer.Buffer;
+                    const derivedKey = dragon.scrypt(new Buffer(password), salt, 1024, 8, 1, 32);
+                    const cipher = dragon.createCipheriv('aes-128-ctr', derivedKey.slice(0, 16), iv);
+                    const ciphertext = Buffer.concat([cipher.update(privateKey), cipher.final()]);
+                    const mac = dragon.sha3(Buffer.concat([derivedKey.slice(16, 32), new Buffer(ciphertext, 'hex')]));
+                    resolve ({
+                        fileName: ['UTC--', new Date().toJSON().replace(/:/g, '-'), '--', hexAddress].join(''),
+                        address: hexAddress,
+                        privateKey: privateKey.toString('hex'),
+                        utcKeystore: {
+                            version: 3,
+                            id: id,
+                            address: hexAddress,
+                            Crypto: {
+                                ciphertext: ciphertext.toString('hex'),
+                                cipherparams: { 
+                                    iv: iv.toString('hex')
+                                },
+                                cipher: 'aes-128-ctr',
+                                kdf: 'scrypt',
+                                kdfparams:{
+                                    dklen: 32,
+                                    salt: salt.toString('hex'),
+                                    "n": 1024,
+                                    "r": 8,
+                                    "p": 1
+                                },
+                                mac: mac.toString('hex'),
+                            }
+                        }
+                    });
+                });
+            }
+
+            makeQRCode(data){
+                return new Promise((resolve, reject) => {
+                    dragon.QRCode.toDataURL(data,  (err, url) => {
+                        if(err){
+                            reject(err)
+                        } else {
+                            resolve(url)
+                        }
+                    })
+                });
+            }
+
+
         }
         window.customElements.define(FunctionWallet.is, FunctionWallet);
     </script>

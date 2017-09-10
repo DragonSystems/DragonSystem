@@ -3,7 +3,7 @@ services:
   certs: 
     build:
       DragonCerts
-    image: dragon-certs
+    image: "${DOCKER_REGISTRY_BASE}/dragon-certs:${CERTS_VERSION}"
     env_file:
       - platform.env
     volumes:
@@ -12,7 +12,7 @@ services:
   site:
     build:
       DragonSite
-    image: dragon-site
+    image: "${DOCKER_REGISTRY_BASE}/dragon-site:${SITE_VERSION}"
     env_file:
       - platform.env
     depends_on:
@@ -21,28 +21,35 @@ services:
   store:
     build:
       DragonStore
-    image: dragon-store
+    image: "${DOCKER_REGISTRY_BASE}/dragon-store:${STORE_VERSION}"
     env_file:
       - platform.env
     depends_on:
       - certs
+
+  parity:
+    image: docker.io/parity/parity:v1.7.2
+    env_file:
+      - platform.env
 
   socket:
     build:
       DragonSockets
-    image: dragon-socket
+    image: "${DOCKER_REGISTRY_BASE}/dragon-socket:${SOCKET_VERSION}"
     env_file:
       - platform.env
     depends_on:
       - certs
       - store
+      - parity
     links:
       - store
+      - parity
 
-  nginx:
+  proxy:
     build:
       DragonProxy
-    image: dragon-proxy
+    image: "${DOCKER_REGISTRY_BASE}/dragon-proxy:${PROXY_VERSION}"
     env_file:
       - platform.env
     volumes:
