@@ -29,7 +29,7 @@ fi
 
 sed -i "s/SSL_API_KEY/${SSL_API_KEY}/g" /nsone.ini
 
-/generate-certs.sh >> /var/log/cron.log
+/generate-certs.sh
 
 echo "Starting ... " >> /var/log/cron.log
 python -m SimpleHTTPServer 8000 &
