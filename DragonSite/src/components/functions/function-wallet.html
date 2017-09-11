@@ -8,8 +8,8 @@
                 return 'function-wallet';
             }
             /**
-            * create a provate key and address
-            * @return {keyObject} keyObject
+            * create a private key and address
+            * @return {utcKeyStore} utcKeyStore
             */
             createKey(password) {
                 return new Promise((resolve, reject) => {
@@ -25,10 +25,19 @@
                     }
                 });
             }
-
+            /**
+            * create a address from public key
+            * @return {utcKeyStore} utcKeyStore
+            */
+            deriveAddress(privateKey){
+                return new Promise((resolve, reject) => {
+                    const publicKey = dragon.privateToPublic(privateKey);
+                    resolve(dragon.publicToAddress(publicKey))
+                });
+            }
             /**
             * create a utc Keystore
-            * @return {keyObject} keyObject
+            * @return {utcKeyStore} utcKeyStore
             */
             utcKeystore(privateKey, hexAddress, password) {
                 return new Promise((resolve, reject) => {
@@ -36,10 +45,10 @@
                     const salt = dragon.randomBytes(32);
                     const iv = dragon.randomBytes(16);
                     const Buffer = dragon.Buffer.Buffer;
-                    const derivedKey = dragon.scrypt(new Buffer(password), salt, 1024, 8, 1, 32);
-                    const cipher = dragon.createCipheriv('aes-128-ctr', derivedKey.slice(0, 16), iv);
+                    const key = dragon.scrypt(new Buffer(password), salt, 1024, 8, 1, 32);
+                    const cipher = dragon.createCipheriv('aes-128-ctr', key.slice(0, 16), iv);
                     const ciphertext = Buffer.concat([cipher.update(privateKey), cipher.final()]);
-                    const mac = dragon.sha3(Buffer.concat([derivedKey.slice(16, 32), new Buffer(ciphertext, 'hex')]));
+                    const mac = dragon.sha3(Buffer.concat([key.slice(16, 32), new Buffer(ciphertext, 'hex')]));
                     resolve ({
                         fileName: ['UTC--', new Date().toJSON().replace(/:/g, '-'), '--', hexAddress].join(''),
                         address: hexAddress,
@@ -69,6 +78,10 @@
                 });
             }
 
+            /**
+            * dmake qr codes
+            * @return {QRCode} QRCode
+            */
             makeQRCode(data){
                 return new Promise((resolve, reject) => {
                     dragon.QRCode.toDataURL(data,  (err, url) => {
@@ -81,8 +94,36 @@
                 });
             }
 
+            /**
+            * decrypt utc keystore
+            * @return {privateKey} privateKey
+            */
+            decryptUtcKeystore(utcKeystore, password) {
+                return new Promise((resolve, reject) => {
+                    const Buffer = dragon.Buffer.Buffer;
+                    const kdfparams = utcKeystore.Crypto.kdfparams;
+                    let key;
+                    if (utcKeystore.Crypto.kdf === 'scrypt') {
+                        key = dragon.scrypt(new Buffer(password), new Buffer(kdfparams.salt, 'hex'), kdfparams.n, kdfparams.r, kdfparams.p, kdfparams.dklen);
+                    } 
+                    else if (utcKeystore.Crypto.kdf === 'pbkdf2') {
+                        if (kdfparams.prf !== 'hmac-sha256') {
+                            reject(Error('hmac-sha256 is not supported'))
+                        }
+                        key = pbkdf2Sync(new Buffer(password), new Buffer(kdfparams.salt, 'hex'), kdfparams.c, kdfparams.dklen, 'sha256');
+                    } else {
+                        reject(Error('Unsupported key derivation scheme'));
+                    }
+                    const ciphertext = new Buffer(utcKeystore.Crypto.ciphertext, 'hex');
+                    const mac = dragon.sha3(Buffer.concat([key.slice(16, 32), ciphertext]));
+                    if (mac.toString('hex') !== utcKeystore.Crypto.mac) {
+                        reject(Error('Wrong Password'));
+                    }
+                    const decipher = dragon.createDecipheriv(utcKeystore.Crypto.cipher, key.slice(0, 16), new Buffer(utcKeystore.Crypto.cipherparams.iv, 'hex'));
+                    resolve(Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('hex'));
+                });
+            }
 
-        }
-        window.customElements.define(FunctionWallet.is, FunctionWallet);
+        } window.customElements.define(FunctionWallet.is, FunctionWallet);
     </script>
 </dom-module>
