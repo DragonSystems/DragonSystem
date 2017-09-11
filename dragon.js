@@ -275,6 +275,7 @@ function composeBuild(){
   console.log("Building docker images ... ");
   logger.log("info", "Bilding docker images");
   shell.exec('docker-compose build', function(code, stdout, stderr) {
+    console.log(stdout);
     logger.log("info", "docker-compose build\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
@@ -287,6 +288,7 @@ function composeUp(){
   console.log("Starting up docker containers ... ");
   logger.log("info", "Starting up docker containers");
   shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+    console.log(stdout);
     logger.log("info", "docker-compose up -d --no-build\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
@@ -299,6 +301,7 @@ function composeBuildAndRun(){
   console.log("Building docker images ... ");
   logger.log("info", "Bilding docker images");
   shell.exec('docker-compose build', function(code, stdout, stderr) {
+    console.log(stdout);
     logger.log("info", "docker-compose build\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
@@ -307,6 +310,7 @@ function composeBuildAndRun(){
       console.log("Starting up docker containers ... ");
       logger.log("info", "Starting up docker containers");
       shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+        console.log(stdout);
         logger.log("info", "docker-compose up -d --no-build\n" + stdout);
         if (code !== 0) {
           logger.log('error', "Error code: " + code + ", error : " + stderr);
@@ -328,6 +332,7 @@ function composePull(){
   console.log("Pulling docker images ... ");
   logger.log("info", "Pulling docker images");
   shell.exec('docker-compose pull', function(code, stdout, stderr) {
+    console.log(stdout);
     logger.log("info", "docker-compose pull\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
@@ -340,6 +345,7 @@ function composePullAndRun(){
   console.log("Pulling docker images ... ");
   logger.log("info", "Pulling docker images");
   shell.exec('docker-compose pull', function(code, stdout, stderr) {
+    console.log(stdout);
     logger.log("info", "docker-compose pull\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
@@ -348,6 +354,7 @@ function composePullAndRun(){
       console.log("Starting up docker containers ... ");
       logger.log("info", "Starting up docker containers");
       shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+        console.log(stdout);
         logger.log("info", "docker-compose up -d --no-build\n" + stdout);
         if (code !== 0) {
           logger.log('error', "Error code: " + code + ", error : " + stderr);
@@ -364,6 +371,7 @@ function composePush(){
   console.log("Pushing images to docker registry ... ");
   logger.log("info", "Pushing images to docker registry");
   shell.exec("docker-compose push", function(code, stdout, stderr) {
+    console.log(stdout);
     logger.log("info", "docker-compose push\n" + stdout);
     if (code !== 0) {
           logger.log('error', "Error code: " + code + ", error : " + stderr);
@@ -385,6 +393,7 @@ function composePs(){
 
 function composeStop(){
   shell.exec('docker-compose stop', function(code, stdout, stderr) {
+    console.log(stdout);
     logger.log("info", "docker-compose stop\n" + stdout);
     if (code !== 0) {
       logger.log('error', "Error code: " + code + ", error : " + stderr);
