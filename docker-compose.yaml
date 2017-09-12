@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   certs: 
-    image: "${DOCKER_REGISTRY_BASE}/dragoncerts:${CERTS_VERSION}"
+    image: "${DOCKER_REGISTRY_BASE}/dragoncert:${CERTS_VERSION}"
     env_file:
       - platform.env
     volumes:
