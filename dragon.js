@@ -58,12 +58,42 @@ var getInterface = function() {
         verticalLayout: 'default'
       }, function(err, data) {
         if(err){
-          console.log('error', err);
-          logger.log('error', err);
+          console.log('Error', err);
+          logger.log('Error', err);
           return;
         }
         console.log(chalk.bold.hex('#FF0033')(data));
         console.log(chalk.hex('#C8C420')('                                                                   v0.01'));
+      });
+    resolve({data:'200'});
+    }, 200);
+  });
+  return promise;
+}
+
+var validateDocker= function() {
+  var promise = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      shell.exec('docker -v', function(code, stdout, stderr) {
+        if (code !== 0) {
+          logger.log('Error', "docker command not found,\nmsg: " + code + ", " + stderr);
+          console.log('Error', "docker command not found,\nmsg: " + code + ", " + stderr);
+          console.log("Use this guide to " + chalk.bold("install docker") +
+            " in the system:\n\t" + chalk.italic("https://docs.docker.com/engine/installation/"));
+          console.log("And this guide to install " + chalk.bold("docker-compose") +
+            " in the system:\n\t" + chalk.italic("https://docs.docker.com/compose/install/"));
+          process.exit(0);
+        } else {
+          shell.exec('docker-compose -v', function(code, stdout, stderr) {
+            if (code !== 0) {
+              logger.log('Error', "docker-compose command not found,\nmsg: " + code + ", " + stderr);
+              console.log('Error', "docker-compose command not found,\nmsg: " + code + ", " + stderr);
+              console.log("Use this guide to install " + chalk.bold("docker-compose") +
+                " in the system:\n\t" + chalk.italic("https://docs.docker.com/compose/install/"));
+              process.exit(0);
+            }
+          });
+        }
       });
     resolve({data:'200'});
     }, 200);
@@ -278,8 +308,8 @@ function composeBuild(){
     console.log(stdout);
     logger.log("info", "docker-compose build\n" + stdout);
     if (code !== 0) {
-      logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('error', "Error code: " + code + ", error : " + stderr);
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
     }
   });
 }
@@ -291,8 +321,8 @@ function composeUp(){
     console.log(stdout);
     logger.log("info", "docker-compose up -d --no-build\n" + stdout);
     if (code !== 0) {
-      logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('error', "Error code: " + code + ", error : " + stderr);
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
     }
   });
 }
@@ -304,8 +334,8 @@ function composeBuildAndRun(){
     console.log(stdout);
     logger.log("info", "docker-compose build\n" + stdout);
     if (code !== 0) {
-      logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('error', "Error code: " + code + ", error : " + stderr);
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
     } else {
       console.log("Starting up docker containers ... ");
       logger.log("info", "Starting up docker containers");
@@ -313,8 +343,8 @@ function composeBuildAndRun(){
         console.log(stdout);
         logger.log("info", "docker-compose up -d --no-build\n" + stdout);
         if (code !== 0) {
-          logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('error', "Error code: " + code + ", error : " + stderr);
+          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+          console.log('Error', "Code: " + code + ", msg: " + stderr);
         } else {
           console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
           console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
@@ -335,8 +365,8 @@ function composePull(){
     console.log(stdout);
     logger.log("info", "docker-compose pull\n" + stdout);
     if (code !== 0) {
-      logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('error', "Error code: " + code + ", error : " + stderr);
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
     }
   });
 }
@@ -348,8 +378,8 @@ function composePullAndRun(){
     console.log(stdout);
     logger.log("info", "docker-compose pull\n" + stdout);
     if (code !== 0) {
-      logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('error', "Error code: " + code + ", error : " + stderr);
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
     } else {
       console.log("Starting up docker containers ... ");
       logger.log("info", "Starting up docker containers");
@@ -357,8 +387,8 @@ function composePullAndRun(){
         console.log(stdout);
         logger.log("info", "docker-compose up -d --no-build\n" + stdout);
         if (code !== 0) {
-          logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('error', "Error code: " + code + ", error : " + stderr);
+          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+          console.log('Error', "Code: " + code + ", msg: " + stderr);
         } else {
           console.log(chalk.blue("Update DNS to point " + site + " and " + socket + " to this server."));
         }
@@ -374,8 +404,8 @@ function composePush(){
     console.log(stdout);
     logger.log("info", "docker-compose push\n" + stdout);
     if (code !== 0) {
-          logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('error', "Error code: " + code + ", error : " + stderr);
+          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+          console.log('Error', "Code: " + code + ", msg: " + stderr);
       }
   });
 }
@@ -385,8 +415,8 @@ function composePs(){
     console.log(stdout);
     logger.log("info", "docker-compose ps\n " + stdout);
     if (code !== 0) {
-      logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('error', "Error code: " + code + ", error : " + stderr);
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
     }
   });
 }
@@ -396,8 +426,8 @@ function composeStop(){
     console.log(stdout);
     logger.log("info", "docker-compose stop\n" + stdout);
     if (code !== 0) {
-      logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('error', "Error code: " + code + ", error : " + stderr);
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
     }
   });
 }
@@ -406,8 +436,8 @@ function composeKill(){
   shell.exec('docker-compose kill', function(code, stdout, stderr) {
     logger.log("info", "docker-compose kill\n" + stdout);
     if (code !== 0) {
-      logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('error', "Error code: " + code + ", error : " + stderr);
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
     }
   });
 }
@@ -416,14 +446,14 @@ function composeRm(){
   shell.exec('docker-compose kill', function(code, stdout, stderr) {
     logger.log("info", "docker-compose kill\n" + stdout);
     if (code !== 0) {
-      logger.log('error', "Error code: " + code + ", error : " + stderr);
-      console.log('error', "Error code: " + code + ", error : " + stderr);
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
     } else {
       shell.exec('docker-compose rm -f', function(code, stdout, stderr) {
         logger.log("info", "docker-compose rm -f\n" + stdout);
         if (code !== 0) {
-          logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('error', "Error code: " + code + ", error : " + stderr);
+          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+          console.log('Error', "Code: " + code + ", msg: " + stderr);
         }
       })
     }
@@ -436,16 +466,16 @@ function composeLogs(log){
   shell.exec('docker-compose logs -f --tail=500', function(code, stdout, stderr) {
     console.log(stdout);
     if (code !== 0) {
-          logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('error', "Error code: " + code + ", error : " + stderr);
+          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+          console.log('Error', "Code: " + code + ", msg: " + stderr);
       }
   });
   } else {
   shell.exec("docker-compose logs -f --tail=500 " + log, function(code, stdout, stderr) {
     console.log(stdout);
     if (code !== 0) {
-          logger.log('error', "Error code: " + code + ", error : " + stderr);
-          console.log('error', "Error code: " + code + ", error : " + stderr);
+          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+          console.log('Error', "Code: " + code + ", msg: " + stderr);
       }
   });
   }
@@ -453,6 +483,7 @@ function composeLogs(log){
 
 function dragonInit(){
   getInterface()
+    .then(validateDocker)
     .then(loadEnv)
     .then(loadPlatform)
     .then(getUserInputs);
