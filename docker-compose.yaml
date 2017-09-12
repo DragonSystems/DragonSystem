@@ -1,8 +1,6 @@
 version: "3.3"
 services:
   certs: 
-    build:
-      DragonCerts
     image: "${DOCKER_REGISTRY_BASE}/dragoncerts:${CERTS_VERSION}"
     env_file:
       - platform.env
@@ -19,8 +17,6 @@ services:
       - certs
 
   store:
-    build:
-      DragonStore
     image: "${DOCKER_REGISTRY_BASE}/dragonstore:${STORE_VERSION}"
     env_file:
       - platform.env
@@ -51,8 +47,6 @@ services:
       - chain
 
   proxy:
-    build:
-      DragonProxy
     image: "${DOCKER_REGISTRY_BASE}/dragonproxy:${PROXY_VERSION}"
     env_file:
       - platform.env
