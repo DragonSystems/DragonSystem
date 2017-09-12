@@ -3,7 +3,7 @@ services:
   certs: 
     build:
       DragonCerts
-    image: "${DOCKER_REGISTRY_BASE}/dragon-certs:${CERTS_VERSION}"
+    image: "${DOCKER_REGISTRY_BASE}/dragoncerts:${CERTS_VERSION}"
     env_file:
       - platform.env
     volumes:
@@ -12,7 +12,7 @@ services:
   site:
     build:
       DragonSite
-    image: "${DOCKER_REGISTRY_BASE}/dragon-site:${SITE_VERSION}"
+    image: "${DOCKER_REGISTRY_BASE}/dragonsite:${SITE_VERSION}"
     env_file:
       - platform.env
     depends_on:
@@ -21,14 +21,14 @@ services:
   store:
     build:
       DragonStore
-    image: "${DOCKER_REGISTRY_BASE}/dragon-store:${STORE_VERSION}"
+    image: "${DOCKER_REGISTRY_BASE}/dragonstore:${STORE_VERSION}"
     env_file:
       - platform.env
     depends_on:
       - certs
 
-  parity:
-    image: docker.io/parity/parity:v1.7.2
+  chain:
+    image: "${DOCKER_REGISTRY_BASE}/dragonchain:${CHAIN_VERSION}"
     ports:
       - "8080:8080"
       - "8545:8545"
@@ -39,21 +39,21 @@ services:
   socket:
     build:
       DragonSockets
-    image: "${DOCKER_REGISTRY_BASE}/dragon-socket:${SOCKET_VERSION}"
+    image: "${DOCKER_REGISTRY_BASE}/dragonsocket:${SOCKET_VERSION}"
     env_file:
       - platform.env
     depends_on:
       - certs
       - store
-      - parity
+      - chain
     links:
       - store
-      - parity
+      - chain
 
   proxy:
     build:
       DragonProxy
-    image: "${DOCKER_REGISTRY_BASE}/dragon-proxy:${PROXY_VERSION}"
+    image: "${DOCKER_REGISTRY_BASE}/dragonproxy:${PROXY_VERSION}"
     env_file:
       - platform.env
     volumes:
