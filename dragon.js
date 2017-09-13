@@ -19,12 +19,11 @@ var debug = "Enable";
 var site = "www.example.com";
 var socket = "socket.example.com";
 var apiKey = "12345678901234567890";
-var dockerRegistry = "docker.io/kiyotocrypto";
-var siteVersion = "latest"
-var socketVersion = "latest"
-var storeVersion = "latest"
-var certsVersion = "latest"
-var proxyVersion = "latest"
+var siteImage = "latest"
+var socketImage = "latest"
+var storeImage = "latest"
+var certsImage = "latest"
+var proxyImage = "latest"
 var logfile = path.join(homeDir, "dragon.log");
 var confFile = path.join(homeDir, ".env");
 var platformFile = path.join(homeDir, "platform.env");
@@ -106,12 +105,11 @@ var loadEnv = function() {
     setTimeout(function(){
       if (shell.test('-f', confFile)) {
         properties.parse(confFile, {path: true}, function (error, data){
-          dockerRegistry = data.DOCKER_REGISTRY_BASE;
-          siteVersion = data.SITE_VERSION;
-          storeVersion = data.STORE_VERSION;
-          certsVersion = data.CERTS_VERSION;
-          proxyVersion = data.PROXY_VERSION;
-          socketVersion = data.SOCKET_VERSION;
+          siteImage = data.SITE_IMAGE;
+          storeImage = data.STORE_IMAGE;
+          certsImage = data.CERTS_IMAGE;
+          proxyImage = data.PROXY_IMAGE;
+          socketImage = data.SOCKET_IMAGE;
         });
       }
     resolve({data:'200'});
@@ -179,39 +177,33 @@ var getUserInputs = function() {
       },
       {
         type: 'input',
-        name: 'dockerRegistry',
-        message: 'Docker registry :',
-        default: dockerRegistry
+        name: 'siteImage',
+        message: 'dragon-site image tag: ',
+        default: siteImage
       },
       {
         type: 'input',
-        name: 'siteVersion',
-        message: 'dragon-site version: ',
-        default: siteVersion
+        name: 'socketImage',
+        message: 'dragon-socket image tag: ',
+        default: socketImage
       },
       {
         type: 'input',
-        name: 'socketVersion',
-        message: 'dragon-socket version: ',
-        default: socketVersion
+        name: 'storeImage',
+        message: 'dragon-store image tag: ',
+        default: storeImage
       },
       {
         type: 'input',
-        name: 'storeVersion',
-        message: 'dragon-store version: ',
-        default: storeVersion
+        name: 'certsImage',
+        message: 'dragon-certs image tag: ',
+        default: certsImage
       },
       {
         type: 'input',
-        name: 'certsVersion',
-        message: 'dragon-certs version: ',
-        default: certsVersion
-      },
-      {
-        type: 'input',
-        name: 'proxyVersion',
-        message: 'dragon-proxy version: ',
-        default: proxyVersion
+        name: 'proxyImage',
+        message: 'dragon-proxy image tag: ',
+        default: proxyImage
       },
       {
         type: 'list',
@@ -244,12 +236,11 @@ function validateUserInputs(answers) {
   apiKey = answers.apiKey;
   debug = answers.debug;
 
-  dockerRegistry = answers.dockerRegistry;
-  siteVersion = answers.siteVersion;
-  storeVersion = answers.storeVersion;
-  certsVersion = answers.certsVersion;
-  proxyVersion = answers.proxyVersion;
-  socketVersion = answers.socketVersion;
+  siteImage = answers.siteImage;
+  storeImage = answers.storeImage;
+  certsImage = answers.certsImage;
+  proxyImage = answers.proxyImage;
+  socketImage = answers.socketImage;
 
   inquirer.prompt([
   {
@@ -280,8 +271,8 @@ function updateConfigFiles(){
   //console.log("Updating configurations ... ");
   logger.log("info", "Updating configurations");
   shell.cd(homeDir);
-  shell.cp(path.join(__dirname, "platform.env.example"), path.join(homeDir, "platform.env"));
-  shell.cp(path.join(__dirname, ".env"), path.join(homeDir, ".env"));
+  shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
+  shell.cp(path.join(__dirname, ".env"), confFile);
   shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
   shell.ln('-sf', path.join(__dirname, "DragonCerts"), path.join(homeDir, "DragonCerts"));
   shell.ln('-sf', path.join(__dirname, "DragonChain"), path.join(homeDir, "DragonChain"));
@@ -289,16 +280,15 @@ function updateConfigFiles(){
   shell.ln('-sf', path.join(__dirname, "DragonSite"), path.join(homeDir, "DragonSite"));
   shell.ln('-sf', path.join(__dirname, "DragonSockets"), path.join(homeDir, "DragonSockets"));
   shell.ln('-sf', path.join(__dirname, "DragonStore"), path.join(homeDir, "DragonStore"));
-  shell.sed('-i', 'DEBUG=.*', "DEBUG=" + debug, 'platform.env');
-  shell.sed('-i', 'SITE_HOSTNAME=.*', "SITE_HOSTNAME=" + site, 'platform.env');
-  shell.sed('-i', 'SOCKET_HOSTNAME=.*', "SOCKET_HOSTNAME=" + socket, 'platform.env');
-  shell.sed('-i', 'SSL_API_KEY=.*', "SSL_API_KEY=" + apiKey, 'platform.env');
-  shell.sed('-i', 'DOCKER_REGISTRY_BASE=.*', "DOCKER_REGISTRY_BASE=" + dockerRegistry, '.env');
-  shell.sed('-i', 'SITE_VERSION=.*', "SITE_VERSION=" + siteVersion, '.env');
-  shell.sed('-i', 'STORE_VERSION=.*', "STORE_VERSION=" + storeVersion, '.env');
-  shell.sed('-i', 'CERTS_VERSION=.*', "CERTS_VERSION=" + certsVersion, '.env');
-  shell.sed('-i', 'PROXY_VERSION=.*', "PROXY_VERSION=" + proxyVersion, '.env');
-  shell.sed('-i', 'SOCKET_VERSION=.*', "SOCKET_VERSION=" + socketVersion, '.env');
+  shell.sed('-i', 'DEBUG=.*', "DEBUG=" + debug, platformFile);
+  shell.sed('-i', 'SITE_HOSTNAME=.*', "SITE_HOSTNAME=" + site, platformFile);
+  shell.sed('-i', 'SOCKET_HOSTNAME=.*', "SOCKET_HOSTNAME=" + socket, platformFile);
+  shell.sed('-i', 'SSL_API_KEY=.*', "SSL_API_KEY=" + apiKey, platformFile);
+  shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
+  shell.sed('-i', 'STORE_IMAGE=.*', "STORE_IMAGE=" + storeImage, confFile);
+  shell.sed('-i', 'CERTS_IMAGE=.*', "CERTS_IMAGE=" + certsImage, confFile);
+  shell.sed('-i', 'PROXY_IMAGE=.*', "PROXY_IMAGE=" + proxyImage, confFile);
+  shell.sed('-i', 'SOCKET_IMAGE=.*', "SOCKET_IMAGE=" + socketImage, confFile);
 }
 
 function composeBuild(){
@@ -330,6 +320,7 @@ function composeBuild(){
     imageTag = answers.tagName;
     component = answers.component;
     // run a sed and update .env file.
+    shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + imageTag, confFile);
     console.log("Building code for " + component  + " ... ");
     shell.exec("npm install && bower install && polymer build", function(code, stdout, stderr) {
       console.log(stdout);
@@ -389,6 +380,9 @@ function composePull(){
 function composePullAndRun(){
   console.log("Pulling docker images ... ");
   logger.log("info", "Pulling docker images");
+  //getUserInputs().then(
+  // Get user inputs. pull and start
+  //);
   shell.exec('docker-compose pull', function(code, stdout, stderr) {
     console.log(stdout);
     logger.log("info", "docker-compose pull\n" + stdout);

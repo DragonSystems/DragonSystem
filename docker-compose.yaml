@@ -1,28 +1,28 @@
 version: "3.3"
 services:
   certs: 
-    image: "${DOCKER_REGISTRY_BASE}/dragoncert:${CERTS_VERSION}"
+    image: "${CERTS_IMAGE}"
     env_file:
       - platform.env
     volumes:
       - ~/.dragon/ssl:/etc/letsencrypt
 
   site:
-    image: "${DOCKER_REGISTRY_BASE}/dragonsite:${SITE_VERSION}"
+    image: "${SITE_IMAGE}"
     env_file:
       - platform.env
     depends_on:
       - certs
 
   store:
-    image: "${DOCKER_REGISTRY_BASE}/dragonstore:${STORE_VERSION}"
+    image: "${STORE_IMAGE}"
     env_file:
       - platform.env
     depends_on:
       - certs
 
   chain:
-    image: "${DOCKER_REGISTRY_BASE}/dragonchain:${CHAIN_VERSION}"
+    image: "${CHAIN_IMAGE}"
     ports:
       - "8080:8080"
       - "8545:8545"
@@ -31,7 +31,7 @@ services:
       - platform.env
 
   socket:
-    image: "${DOCKER_REGISTRY_BASE}/dragonsocket:${SOCKET_VERSION}"
+    image: "${SOCKET_IMAGE}"
     env_file:
       - platform.env
     depends_on:
@@ -43,7 +43,7 @@ services:
       - chain
 
   proxy:
-    image: "${DOCKER_REGISTRY_BASE}/dragonproxy:${PROXY_VERSION}"
+    image: "${PROXY_IMAGE}"
     env_file:
       - platform.env
     volumes:
