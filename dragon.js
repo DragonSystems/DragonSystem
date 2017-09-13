@@ -36,15 +36,16 @@ logger.remove(logger.transports.Console);
 
 cmd.option('ps', 'Show running status')
   .option('init', 'initialize configurations')
-  .option('start', 'Start dragon system in desktop mode')
+  .option('get [name]', 'fetch code from git to current directory',/^(Site|Socket|Store|Proxy|Certs|Chain)$/)
+  .option('start', 'Start dragon system. (For servers use server option)')
   .option('server', 'Run dragon system in a server')
-  .option('build', 'Build dockers')
+  .option('build', 'Build custom docker images')
   .option('logs [name]', 'Get docker logs',  /^(site|socket|store|proxy|certs|parity)$/i)
   .option('stop', 'Stop all running dockers')
   .option('kill', 'Forcefully stop all running dockers')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
-  .option('pull', 'Pull builded docker images from a docker registry')
+  .option('pull', 'Pull all docker images from a docker registries')
   .version('0.1.0', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
@@ -301,15 +302,54 @@ function updateConfigFiles(){
 }
 
 function composeBuild(){
-  console.log("Building docker images ... ");
-  logger.log("info", "Bilding docker images");
-  //shell.exec('docker-compose build', function(code, stdout, stderr) {
-  //  console.log(stdout);
-  //  logger.log("info", "docker-compose build\n" + stdout);
-  //  if (code !== 0) {
-  //    logger.log('Error', "Code: " + code + ", msg: " + stderr);
-  //    console.log('Error', "Code: " + code + ", msg: " + stderr);
-  //  }
+
+  shell.config.silent = false;
+  imageTag = "";
+  inquirer.prompt([
+  {
+    type: 'list',
+    message: 'Build component',
+    name: 'component',
+    choices: [
+      {
+          name: 'Site'
+      }
+     // },
+     // {
+     //     name: 'API'
+     // }
+    ]
+  },
+  {
+    type: 'input',
+    name: 'tagName',
+    message: 'Image tag name: ',
+    default: "docker.io/dragonsystem/customname:0.0.1-rc1"
+  }
+  ]).then(function (answers) {
+    imageTag = answers.tagName;
+    component = answers.component;
+    // run a sed and update .env file.
+    console.log("Building code for " + component  + " ... ");
+    shell.exec("npm install && bower install && polymer build", function(code, stdout, stderr) {
+      console.log(stdout);
+      logger.log("info", "Building source.\n" + stdout);
+      if (code !== 0) {
+        logger.log('Error', "Code: " + code + ", msg: " + stderr);
+        console.log('Error', "Code: " + code + ", msg: " + stderr);
+      } else {
+        console.log("Building docker image for " + imageTag + " ... ");
+        logger.log("info", "Bilding docker images");
+        shell.exec("docker build -t " + imageTag + " .", function(code, stdout, stderr) {
+          console.log(stdout);
+          logger.log("info", "docker build -t " + imageTag + " .\n" + stdout);
+          if (code !== 0) {
+            logger.log('Error', "Code: " + code + ", msg: " + stderr);
+            console.log('Error', "Code: " + code + ", msg: " + stderr);
+          }
+        });
+      }
+    });
   });
 }
 
@@ -456,12 +496,27 @@ function composeLogs(log){
   }
 }
 
+function composeGet(repo){
+  if (repo == true){
+    console.log("Usage: dragon get <Site|Socket|Store|Proxy|Certs|Chain>\n" +
+      "Example: dragon get Site");
+  } else {
+  shell.exec("git clone https://github.com/DragonSystems/Dragon" + repo + ".git ", function(code, stdout, stderr) {
+    console.log(stdout);
+    if (code !== 0) {
+          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+          console.log('Error', "Code: " + code + ", msg: " + stderr);
+      }
+  });
+  }
+}
+
 function dragonInit(){
   getInterface()
     .then(validateDocker)
     .then(loadEnv)
-    .then(loadPlatform)
-    .then(getUserInputs);
+    .then(loadPlatform);
+    //.then(getUserInputs);
 }
 
 function validateConfigs(){
@@ -547,6 +602,12 @@ if (cmd.logs) {
   if (validateConfigs()){
     shell.cd(homeDir);
     composeLogs(cmd.logs);
+  }
+}
+
+if (cmd.get) {
+  if (validateConfigs()){
+    composeGet(cmd.get);
   }
 }
 
