@@ -377,34 +377,34 @@ function composePull(){
   });
 }
 
-function composePullAndRun(){
-  console.log("Pulling docker images ... ");
-  logger.log("info", "Pulling docker images");
-  //getUserInputs().then(
-  // Get user inputs. pull and start
-  //);
-  shell.exec('docker-compose pull', function(code, stdout, stderr) {
-    console.log(stdout);
-    logger.log("info", "docker-compose pull\n" + stdout);
-    if (code !== 0) {
-      logger.log('Error', "Code: " + code + ", msg: " + stderr);
-      console.log('Error', "Code: " + code + ", msg: " + stderr);
-    } else {
-      console.log("Starting up docker containers ... ");
-      logger.log("info", "Starting up docker containers");
-      shell.exec('docker-compose up -d', function(code, stdout, stderr) {
-        console.log(stdout);
-        logger.log("info", "docker-compose up -d\n" + stdout);
-        if (code !== 0) {
-          logger.log('Error', "Code: " + code + ", msg: " + stderr);
-          console.log('Error', "Code: " + code + ", msg: " + stderr);
-        } else {
-          console.log(chalk.blue("Update DNS to point " + site + " and " + socket + " to this server."));
-        }
-      });
-    }
-  });
-}
+//function composePullAndRun(){
+//  console.log("Pulling docker images ... ");
+//  logger.log("info", "Pulling docker images");
+//  //getUserInputs().then(
+//  // Get user inputs. pull and start
+//  //);
+//  shell.exec('docker-compose pull', function(code, stdout, stderr) {
+//    console.log(stdout);
+//    logger.log("info", "docker-compose pull\n" + stdout);
+//    if (code !== 0) {
+//      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+//      console.log('Error', "Code: " + code + ", msg: " + stderr);
+//    } else {
+//      console.log("Starting up docker containers ... ");
+//      logger.log("info", "Starting up docker containers");
+//      shell.exec('docker-compose up -d', function(code, stdout, stderr) {
+//        console.log(stdout);
+//        logger.log("info", "docker-compose up -d\n" + stdout);
+//        if (code !== 0) {
+//          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+//          console.log('Error', "Code: " + code + ", msg: " + stderr);
+//        } else {
+//          console.log(chalk.blue("Update DNS to point " + site + " and " + socket + " to this server."));
+//        }
+//      });
+//    }
+//  });
+//}
 
 function composePush(){
   console.log("Pushing images to docker registry ... ");
@@ -554,7 +554,12 @@ if (cmd.init) {
 if (cmd.server) {
   if (validateConfigs()){
     shell.cd(homeDir);
-    composePullAndRun();
+    //composePullAndRun();
+    getInterface()
+      .then(validateDocker)
+      .then(loadEnv)
+      .then(loadPlatform);
+      .then(getUserInputs);
   }
 }
 
