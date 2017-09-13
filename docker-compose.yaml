@@ -8,8 +8,6 @@ services:
       - ~/.dragon/ssl:/etc/letsencrypt
 
   site:
-    build:
-      DragonSite
     image: "${DOCKER_REGISTRY_BASE}/dragonsite:${SITE_VERSION}"
     env_file:
       - platform.env
@@ -33,8 +31,6 @@ services:
       - platform.env
 
   socket:
-    build:
-      DragonSockets
     image: "${DOCKER_REGISTRY_BASE}/dragonsocket:${SOCKET_VERSION}"
     env_file:
       - platform.env

@@ -37,7 +37,6 @@ logger.remove(logger.transports.Console);
 cmd.option('ps', 'Show running status')
   .option('init', 'initialize configurations')
   .option('start', 'Start dragon system in desktop mode')
-  .option('desktop', 'Run dragon system in a desktop')
   .option('server', 'Run dragon system in a server')
   .option('build', 'Build dockers')
   .option('logs [name]', 'Get docker logs',  /^(site|socket|store|proxy|certs|parity)$/i)
@@ -304,56 +303,32 @@ function updateConfigFiles(){
 function composeBuild(){
   console.log("Building docker images ... ");
   logger.log("info", "Bilding docker images");
-  shell.exec('docker-compose build', function(code, stdout, stderr) {
-    console.log(stdout);
-    logger.log("info", "docker-compose build\n" + stdout);
-    if (code !== 0) {
-      logger.log('Error', "Code: " + code + ", msg: " + stderr);
-      console.log('Error', "Code: " + code + ", msg: " + stderr);
-    }
+  //shell.exec('docker-compose build', function(code, stdout, stderr) {
+  //  console.log(stdout);
+  //  logger.log("info", "docker-compose build\n" + stdout);
+  //  if (code !== 0) {
+  //    logger.log('Error', "Code: " + code + ", msg: " + stderr);
+  //    console.log('Error', "Code: " + code + ", msg: " + stderr);
+  //  }
   });
 }
 
 function composeUp(){
   console.log("Starting up docker containers ... ");
   logger.log("info", "Starting up docker containers");
-  shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+  shell.exec('docker-compose up -d', function(code, stdout, stderr) {
     console.log(stdout);
-    logger.log("info", "docker-compose up -d --no-build\n" + stdout);
-    if (code !== 0) {
-      logger.log('Error', "Code: " + code + ", msg: " + stderr);
-      console.log('Error', "Code: " + code + ", msg: " + stderr);
-    }
-  });
-}
-
-function composeBuildAndRun(){
-  console.log("Building docker images ... ");
-  logger.log("info", "Bilding docker images");
-  shell.exec('docker-compose build', function(code, stdout, stderr) {
-    console.log(stdout);
-    logger.log("info", "docker-compose build\n" + stdout);
+    logger.log("info", "docker-compose up -d\n" + stdout);
     if (code !== 0) {
       logger.log('Error', "Code: " + code + ", msg: " + stderr);
       console.log('Error', "Code: " + code + ", msg: " + stderr);
     } else {
-      console.log("Starting up docker containers ... ");
-      logger.log("info", "Starting up docker containers");
-      shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
-        console.log(stdout);
-        logger.log("info", "docker-compose up -d --no-build\n" + stdout);
-        if (code !== 0) {
-          logger.log('Error', "Code: " + code + ", msg: " + stderr);
-          console.log('Error', "Code: " + code + ", msg: " + stderr);
-        } else {
-          console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
-          console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
-          console.log(chalk.blue("Add following lines to the file"));
-          console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + site)));
-          console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + socket)));
-          console.log(chalk.blue("Save and exit using \'<Esc> :wq\'"));
-        }
-      });
+      console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
+      console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
+      console.log(chalk.blue("Add following lines to the file"));
+      console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + site)));
+      console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + socket)));
+      console.log(chalk.blue("Save and exit using \'<Esc> :wq\'"));
     }
   });
 }
@@ -383,9 +358,9 @@ function composePullAndRun(){
     } else {
       console.log("Starting up docker containers ... ");
       logger.log("info", "Starting up docker containers");
-      shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+      shell.exec('docker-compose up -d', function(code, stdout, stderr) {
         console.log(stdout);
-        logger.log("info", "docker-compose up -d --no-build\n" + stdout);
+        logger.log("info", "docker-compose up -d\n" + stdout);
         if (code !== 0) {
           logger.log('Error', "Code: " + code + ", msg: " + stderr);
           console.log('Error', "Code: " + code + ", msg: " + stderr);
@@ -513,11 +488,10 @@ if (process.argv.length == 2) {
     .then(loadPlatform);
 }
 
-
-if (cmd.start || cmd.desktop) {
+if (cmd.start) {
   if (validateConfigs()){
     shell.cd(homeDir);
-    composeBuildAndRun();
+    composeUp();
   }
 }
 
@@ -544,7 +518,6 @@ if (cmd.ps) {
 
 if (cmd.build) {
   if (validateConfigs()){
-    shell.cd(homeDir);
     composeBuild();
   }
 }
