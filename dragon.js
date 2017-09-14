@@ -369,6 +369,7 @@ function composeUp(){
 }
 
 function composePull(){
+  shell.config.silent = false;
   console.log("Pulling docker images ... ");
   logger.log("info", "Pulling docker images");
   shell.exec('docker-compose pull', function(code, stdout, stderr) {
