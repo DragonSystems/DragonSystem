@@ -516,6 +516,10 @@ function composeGet(repo){
 }
 
 function dragonInit(){
+  shell.cd(homeDir);
+  shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
+  shell.cp(path.join(__dirname, ".env"), confFile);
+  shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
   getInterface()
     .then(validateDocker)
     .then(loadEnv)
@@ -555,10 +559,8 @@ if (cmd.start) {
 }
 
 if (cmd.init) {
-  if (validateConfigs()){
-    shell.cd(homeDir);
-    dragonInit();
-  }
+  shell.cd(homeDir);
+  dragonInit();
 }
 
 if (cmd.server) {
