@@ -34,10 +34,10 @@ The Dragon System is a production class development framework and API for Ethere
                      |___/                   |___/                           
                                                                    v0.01
 ? Site domain name: www.drageth.com
-? Socket domain name: sws.drageth.com
+? API domain name: sws.drageth.com
 ? NS1 API key: <20 character api key>
 ? dragon-site image tag:  docker.io/dragonsystems/dragonsite:0.0.1
-? dragon-socket image tag:  docker.io/dragonsystems/dragonapi:0.0.1
+? dragon-api image tag:  docker.io/dragonsystems/dragonapi:0.0.1
 ? dragon-store image tag:  docker.io/dragonsystems/dragonstore:0.0.1
 ? dragon-certs image tag:  docker.io/dragonsystems/dragoncert:0.0.1
 ? dragon-proxy image tag:  docker.io/dragonsystems/dragonproxy:0.0.1
@@ -77,7 +77,7 @@ dragon_certs_1    /bin/sh -c /startup   Up      80/tcp
 dragon_chain_1    /parity/parity        Up      0.0.0.0:8080->8080/tcp
 dragon_proxy_1    /bin/sh -c /startup   Up      0.0.0.0:443->443/tcp, 
 dragon_site_1     node server.js        Up      8080/tcp                                                               
-dragon_socket_1   node socket.js        Up      8011/tcp                                                               
+dragon_api_1      node socket.js        Up      8011/tcp                                                               
 dragon_store_1    /bin/sh -c /startup   Up      4001/tcp, 5001/tcp, 90
 ```
 
@@ -88,7 +88,7 @@ dragon_store_1    /bin/sh -c /startup   Up      4001/tcp, 5001/tcp, 90
 ```Attaching to dragon_certs_1
 certs_1   | Reading environment variables ...
 certs_1   | SITE_HOSTNAME=www.drageth.com
-certs_1   | SOCKET_HOSTNAME=sws.drageth.com
+certs_1   | API_HOSTNAME=sws.drageth.com
 certs_1   | SSL_API_KEY=***********900
 certs_1   | Certs already exist for domain : www.drageth.com
 certs_1   | Certs already exist for domain : sws.drageth.com

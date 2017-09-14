@@ -30,8 +30,8 @@ services:
     env_file:
       - platform.env
 
-  socket:
-    image: "${SOCKET_IMAGE}"
+  api:
+    image: "${API_IMAGE}"
     env_file:
       - platform.env
     depends_on:
@@ -54,9 +54,9 @@ services:
     depends_on:
       - certs
       - site
-      - socket
+      - api
     links:
       - certs
       - site
-      - socket
+      - api
  

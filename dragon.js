@@ -17,10 +17,10 @@ shell.config.silent = true;
 var homeDir = path.join(os.homedir(), ".dragon");
 var debug = "Enable";
 var site = "www.example.com";
-var socket = "socket.example.com";
+var api = "api.example.com";
 var apiKey = "12345678901234567890";
 var siteImage = "latest"
-var socketImage = "latest"
+var apiImage = "latest"
 var storeImage = "latest"
 var certsImage = "latest"
 var proxyImage = "latest"
@@ -35,11 +35,11 @@ logger.remove(logger.transports.Console);
 
 cmd.option('ps', 'Show running status')
   .option('init', 'initialize configurations')
-  .option('get [name]', 'fetch code from git to current directory',/^(Site|Socket|Store|Proxy|Certs|Chain)$/)
+  .option('get [name]', 'fetch code from git to current directory',/^(Site|Api|Store|Proxy|Certs|Chain)$/)
   .option('start', 'Start dragon system. (For servers use server option)')
   .option('server', 'Run dragon system in a server')
   .option('build', 'Build custom docker images')
-  .option('logs [name]', 'Get docker logs',  /^(site|socket|store|proxy|certs|parity)$/i)
+  .option('logs [name]', 'Get docker logs',  /^(site|api|store|proxy|certs|parity)$/i)
   .option('stop', 'Stop all running dockers')
   .option('kill', 'Forcefully stop all running dockers')
   .option('rm', 'Clear all stopped docker containers')
@@ -119,7 +119,7 @@ var loadEnv = function() {
           storeImage = data.STORE_IMAGE;
           certsImage = data.CERTS_IMAGE;
           proxyImage = data.PROXY_IMAGE;
-          socketImage = data.SOCKET_IMAGE;
+          apiImage = data.API_IMAGE;
         });
       }
     resolve({data:'200'});
@@ -136,7 +136,7 @@ var loadPlatform = function() {
           debug = data.DEBUG;
           apiKey = data.SSL_API_KEY;
           site = data.SITE_HOSTNAME;
-          socket = data.SOCKET_HOSTNAME;
+          api = data.API_HOSTNAME;
         });
       }
     resolve({data:'200'});
@@ -163,9 +163,9 @@ var getUserInputs = function() {
       },
       {
         type: 'input',
-        name: 'socketHostname',
-        message: 'Socket domain name:',
-        default: socket,
+        name: 'apiHostname',
+        message: 'API domain name:',
+        default: api,
         validate: function(str) {
           if (validator.isFQDN(str)) {
             return true;
@@ -193,9 +193,9 @@ var getUserInputs = function() {
       },
       {
         type: 'input',
-        name: 'socketImage',
-        message: 'dragon-socket image tag: ',
-        default: socketImage
+        name: 'apiImage',
+        message: 'dragon-api image tag: ',
+        default: apiImage
       },
       {
         type: 'input',
@@ -242,7 +242,7 @@ var getUserInputs = function() {
 function validateUserInputs(answers) {
 
   site = answers.siteHostname;
-  socket = answers.socketHostname;
+  api = answers.apiHostname;
   apiKey = answers.apiKey;
   debug = answers.debug;
 
@@ -250,7 +250,7 @@ function validateUserInputs(answers) {
   storeImage = answers.storeImage;
   certsImage = answers.certsImage;
   proxyImage = answers.proxyImage;
-  socketImage = answers.socketImage;
+  apiImage = answers.apiImage;
 
   inquirer.prompt([
   {
@@ -286,13 +286,13 @@ function updateConfigFiles(){
   shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
   shell.sed('-i', 'DEBUG=.*', "DEBUG=" + debug, platformFile);
   shell.sed('-i', 'SITE_HOSTNAME=.*', "SITE_HOSTNAME=" + site, platformFile);
-  shell.sed('-i', 'SOCKET_HOSTNAME=.*', "SOCKET_HOSTNAME=" + socket, platformFile);
+  shell.sed('-i', 'API_HOSTNAME=.*', "API_HOSTNAME=" + api, platformFile);
   shell.sed('-i', 'SSL_API_KEY=.*', "SSL_API_KEY=" + apiKey, platformFile);
   shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
   shell.sed('-i', 'STORE_IMAGE=.*', "STORE_IMAGE=" + storeImage, confFile);
   shell.sed('-i', 'CERTS_IMAGE=.*', "CERTS_IMAGE=" + certsImage, confFile);
   shell.sed('-i', 'PROXY_IMAGE=.*', "PROXY_IMAGE=" + proxyImage, confFile);
-  shell.sed('-i', 'SOCKET_IMAGE=.*', "SOCKET_IMAGE=" + socketImage, confFile);
+  shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
 }
 
 function composeBuild(){
@@ -362,7 +362,7 @@ function composeUp(){
       console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
       console.log(chalk.blue("Add following lines to the file"));
       console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + site)));
-      console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + socket)));
+      console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + api)));
       console.log(chalk.blue("Save and exit using \'<Esc> :wq\'"));
     }
   });
@@ -403,7 +403,7 @@ function composePull(){
 //          logger.log('Error', "Code: " + code + ", msg: " + stderr);
 //          console.log('Error', "Code: " + code + ", msg: " + stderr);
 //        } else {
-//          console.log(chalk.blue("Update DNS to point " + site + " and " + socket + " to this server."));
+//          console.log(chalk.blue("Update DNS to point " + site + " and " + api + " to this server."));
 //        }
 //      });
 //    }
@@ -496,7 +496,7 @@ function composeLogs(log){
 
 function composeGet(repo){
   if (repo == true){
-    console.log("Usage: dragon get <Site|Socket|Store|Proxy|Certs|Chain>\n" +
+    console.log("Usage: dragon get <Site|Api|Store|Proxy|Certs|Chain>\n" +
       "Example: dragon get Site");
   } else {
   shell.exec("git clone https://github.com/DragonSystems/Dragon" + repo + ".git ", function(code, stdout, stderr) {
