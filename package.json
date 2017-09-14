@@ -1,6 +1,6 @@
 {
   "name": "dragon-system",
-  "version": "0.0.1-rc.2",
+  "version": "0.0.1-rc.3",
   "description": "Dragon system installer",
   "main": "index.js",
   "scripts": {
