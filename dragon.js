@@ -284,12 +284,6 @@ function updateConfigFiles(){
   shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
   shell.cp(path.join(__dirname, ".env"), confFile);
   shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
-  shell.ln('-sf', path.join(__dirname, "DragonCerts"), path.join(homeDir, "DragonCerts"));
-  shell.ln('-sf', path.join(__dirname, "DragonChain"), path.join(homeDir, "DragonChain"));
-  shell.ln('-sf', path.join(__dirname, "DragonProxy"), path.join(homeDir, "DragonProxy"));
-  shell.ln('-sf', path.join(__dirname, "DragonSite"), path.join(homeDir, "DragonSite"));
-  shell.ln('-sf', path.join(__dirname, "DragonSockets"), path.join(homeDir, "DragonSockets"));
-  shell.ln('-sf', path.join(__dirname, "DragonStore"), path.join(homeDir, "DragonStore"));
   shell.sed('-i', 'DEBUG=.*', "DEBUG=" + debug, platformFile);
   shell.sed('-i', 'SITE_HOSTNAME=.*', "SITE_HOSTNAME=" + site, platformFile);
   shell.sed('-i', 'SOCKET_HOSTNAME=.*', "SOCKET_HOSTNAME=" + socket, platformFile);
@@ -523,8 +517,8 @@ function dragonInit(){
   getInterface()
     .then(validateDocker)
     .then(loadEnv)
-    .then(loadPlatform);
-    //.then(getUserInputs);
+    .then(loadPlatform)
+    .then(getUserInputs);
 }
 
 function validateConfigs(){
