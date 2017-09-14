@@ -90,6 +90,16 @@ var validateDocker= function() {
               console.log("Use this guide to install " + chalk.bold("docker-compose") +
                 " in the system:\n\t" + chalk.italic("https://docs.docker.com/compose/install/"));
               process.exit(0);
+            } else {
+              shell.exec('git --version', function(code, stdout, stderr) {
+                if (code !== 0) {
+                  logger.log('Error', "git command not found,\nmsg: " + code + ", " + stderr);
+                  console.log('Error', "git command not found,\nmsg: " + code + ", " + stderr);
+                  console.log("Use this guide to install " + chalk.bold("git") +
+                    " in the system:\n\t" + chalk.italic("https://git-scm.com/book/en/v2/Getting-Started-Installing-Git"));
+                  process.exit(0);
+                }
+              });
             }
           });
         }
@@ -558,7 +568,7 @@ if (cmd.server) {
     getInterface()
       .then(validateDocker)
       .then(loadEnv)
-      .then(loadPlatform);
+      .then(loadPlatform)
       .then(getUserInputs);
   }
 }
