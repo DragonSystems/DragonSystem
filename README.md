@@ -2,19 +2,31 @@
 
 The Dragon System is a production class development framework and API for Ethereum web apps.
 
-* Ethereum
-* Polymer
-* PRPL Server
-* Socket.io
-* Keythereum 
-* JSON Web Signatures
-* Express
-* GunDB
-* Nginx
-* Parity
-* Solidity
-* Truffle
+At the moment dragon-system will only work on Mac OSX and Linux. 
 
+### Install dependencies
+
+- nodejs
+
+   Install [nodejs](https://nodejs.org/en/download/package-manager/) v6.X.X LTS version.
+
+- npm
+
+   Make sure you have installed latest npm. You can run `sudo npm install -g npm`.
+
+- git
+
+   Install [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) commandline tool.
+
+- docker
+
+   Install [docker](https://docs.docker.com/engine/installation). The community edition (docker-ce) will work. In Linux make sure you grant permissions to the current user to use docker by adding current user to docker group, `sudo usermod -aG docker $USER`. Once you update the users group, exit from the current terminal and open a new one to make effect.
+
+- docker-compose
+
+   Install [docker-compose](https://docs.docker.com/compose/install)
+   
+**Note**:- Make sure you can run `git`, `docker ps`, `docker-compose` without any issue and without sudo command.
 
 ### Install dragon-system
 
@@ -45,13 +57,13 @@ The Dragon System is a production class development framework and API for Ethere
 ? Continue on installation? Yes
 ```
 
-Note:-  You have to obtain an NS1 API key and two domain to proceed. 
+**Note**:-  You have to obtain an NS1 API key and two domain to proceed. 
 
 #### Pull docker images from docker hub
 
 `dragon pull`
 
-Note:- This will take some time in the initial run since it has to grab all images from the docker hub.
+**Note**:- This will take some time in the initial run since it has to grab all images from the docker hub.
 
 #### Start docker containers
 
@@ -128,11 +140,13 @@ This will clone the DragonSite to the current directory. Do you modifications in
 
 ```[localhost DragonSite]$ dragon build
 ? Build component Site
-? Image tag name:  docker.io/dragonsystem/customname:0.0.1-rc1
+? Image tag name:  docker.io/username/customname:0.0.1-rc1
 Building code for Site ... 
 ```
 
 It will build the source code and then build the docker image with the given tag.
+
+**Note**:- Image tag it the docker image name and version that you build your custom changes into. This name matters only if you are planning to push it into a registry. Otherwise system will use the local cache. But we recommend you to use a repository so then you can push and pull from it without any issue and you can maintain different versions of your changes properly. You can get a free public docker hosting space from [docker hub](https://hub.docker.com).
 
 #### Push the build docker image to registry.
 
@@ -167,3 +181,19 @@ Save and exit using '<Esc> :wq'
 ```
 
 Ignore the hosts update and add DNS entries to point to the running server.
+
+
+### Clean the environment
+
+You can follow below steps to clean your environment.
+
+- `sudo npm uninstall -g dragon-system`
+
+- `sudo rm -rf $USER/.dragon`
+
+   <sup>Use `sudo` since docker will create a directory called 'ssl' to mount in to the cert docker image as root user.</sup>
+
+- `docker rm $(docker ps -aq)`
+
+- `docker rmi $(docker images | awk '/dragon/{print $3}')`
+
