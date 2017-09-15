@@ -1,34 +1,28 @@
 version: "3.3"
 services:
   certs: 
-    build:
-      DragonCerts
-    image: "${DOCKER_REGISTRY_BASE}/dragon-certs:${CERTS_VERSION}"
+    image: "${CERTS_IMAGE}"
     env_file:
       - platform.env
     volumes:
       - ~/.dragon/ssl:/etc/letsencrypt
 
   site:
-    build:
-      DragonSite
-    image: "${DOCKER_REGISTRY_BASE}/dragon-site:${SITE_VERSION}"
+    image: "${SITE_IMAGE}"
     env_file:
       - platform.env
     depends_on:
       - certs
 
   store:
-    build:
-      DragonStore
-    image: "${DOCKER_REGISTRY_BASE}/dragon-store:${STORE_VERSION}"
+    image: "${STORE_IMAGE}"
     env_file:
       - platform.env
     depends_on:
       - certs
 
-  parity:
-    image: docker.io/parity/parity:v1.7.2
+  chain:
+    image: "${CHAIN_IMAGE}"
     ports:
       - "8080:8080"
       - "8545:8545"
@@ -36,24 +30,20 @@ services:
     env_file:
       - platform.env
 
-  socket:
-    build:
-      DragonSockets
-    image: "${DOCKER_REGISTRY_BASE}/dragon-socket:${SOCKET_VERSION}"
+  api:
+    image: "${API_IMAGE}"
     env_file:
       - platform.env
     depends_on:
       - certs
       - store
-      - parity
+      - chain
     links:
       - store
-      - parity
+      - chain
 
   proxy:
-    build:
-      DragonProxy
-    image: "${DOCKER_REGISTRY_BASE}/dragon-proxy:${PROXY_VERSION}"
+    image: "${PROXY_IMAGE}"
     env_file:
       - platform.env
     volumes:
@@ -64,9 +54,9 @@ services:
     depends_on:
       - certs
       - site
-      - socket
+      - api
     links:
       - certs
       - site
-      - socket
+      - api
  

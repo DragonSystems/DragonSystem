@@ -17,14 +17,13 @@ shell.config.silent = true;
 var homeDir = path.join(os.homedir(), ".dragon");
 var debug = "Enable";
 var site = "www.example.com";
-var socket = "socket.example.com";
+var api = "api.example.com";
 var apiKey = "12345678901234567890";
-var dockerRegistry = "docker.io/kiyotocrypto";
-var siteVersion = "latest"
-var socketVersion = "latest"
-var storeVersion = "latest"
-var certsVersion = "latest"
-var proxyVersion = "latest"
+var siteImage = "latest"
+var apiImage = "latest"
+var storeImage = "latest"
+var certsImage = "latest"
+var proxyImage = "latest"
 var logfile = path.join(homeDir, "dragon.log");
 var confFile = path.join(homeDir, ".env");
 var platformFile = path.join(homeDir, "platform.env");
@@ -36,16 +35,16 @@ logger.remove(logger.transports.Console);
 
 cmd.option('ps', 'Show running status')
   .option('init', 'initialize configurations')
-  .option('start', 'Start dragon system in desktop mode')
-  .option('desktop', 'Run dragon system in a desktop')
+  .option('get [name]', 'fetch code from git to current directory',/^(Site|Api|Store|Proxy|Certs|Chain)$/)
+  .option('start', 'Start dragon system. (For servers use server option)')
   .option('server', 'Run dragon system in a server')
-  .option('build', 'Build dockers')
-  .option('logs [name]', 'Get docker logs',  /^(site|socket|store|proxy|certs|parity)$/i)
+  .option('build', 'Build custom docker images')
+  .option('logs [name]', 'Get docker logs',  /^(site|api|store|proxy|certs|parity)$/i)
   .option('stop', 'Stop all running dockers')
   .option('kill', 'Forcefully stop all running dockers')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
-  .option('pull', 'Pull builded docker images from a docker registry')
+  .option('pull', 'Pull all docker images from a docker registries')
   .version('0.1.0', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
@@ -91,6 +90,16 @@ var validateDocker= function() {
               console.log("Use this guide to install " + chalk.bold("docker-compose") +
                 " in the system:\n\t" + chalk.italic("https://docs.docker.com/compose/install/"));
               process.exit(0);
+            } else {
+              shell.exec('git --version', function(code, stdout, stderr) {
+                if (code !== 0) {
+                  logger.log('Error', "git command not found,\nmsg: " + code + ", " + stderr);
+                  console.log('Error', "git command not found,\nmsg: " + code + ", " + stderr);
+                  console.log("Use this guide to install " + chalk.bold("git") +
+                    " in the system:\n\t" + chalk.italic("https://git-scm.com/book/en/v2/Getting-Started-Installing-Git"));
+                  process.exit(0);
+                }
+              });
             }
           });
         }
@@ -106,12 +115,11 @@ var loadEnv = function() {
     setTimeout(function(){
       if (shell.test('-f', confFile)) {
         properties.parse(confFile, {path: true}, function (error, data){
-          dockerRegistry = data.DOCKER_REGISTRY_BASE;
-          siteVersion = data.SITE_VERSION;
-          storeVersion = data.STORE_VERSION;
-          certsVersion = data.CERTS_VERSION;
-          proxyVersion = data.PROXY_VERSION;
-          socketVersion = data.SOCKET_VERSION;
+          siteImage = data.SITE_IMAGE;
+          storeImage = data.STORE_IMAGE;
+          certsImage = data.CERTS_IMAGE;
+          proxyImage = data.PROXY_IMAGE;
+          apiImage = data.API_IMAGE;
         });
       }
     resolve({data:'200'});
@@ -128,7 +136,7 @@ var loadPlatform = function() {
           debug = data.DEBUG;
           apiKey = data.SSL_API_KEY;
           site = data.SITE_HOSTNAME;
-          socket = data.SOCKET_HOSTNAME;
+          api = data.API_HOSTNAME;
         });
       }
     resolve({data:'200'});
@@ -155,9 +163,9 @@ var getUserInputs = function() {
       },
       {
         type: 'input',
-        name: 'socketHostname',
-        message: 'Socket domain name:',
-        default: socket,
+        name: 'apiHostname',
+        message: 'API domain name:',
+        default: api,
         validate: function(str) {
           if (validator.isFQDN(str)) {
             return true;
@@ -179,39 +187,33 @@ var getUserInputs = function() {
       },
       {
         type: 'input',
-        name: 'dockerRegistry',
-        message: 'Docker registry :',
-        default: dockerRegistry
+        name: 'siteImage',
+        message: 'dragon-site image tag: ',
+        default: siteImage
       },
       {
         type: 'input',
-        name: 'siteVersion',
-        message: 'dragon-site version: ',
-        default: siteVersion
+        name: 'apiImage',
+        message: 'dragon-api image tag: ',
+        default: apiImage
       },
       {
         type: 'input',
-        name: 'socketVersion',
-        message: 'dragon-socket version: ',
-        default: socketVersion
+        name: 'storeImage',
+        message: 'dragon-store image tag: ',
+        default: storeImage
       },
       {
         type: 'input',
-        name: 'storeVersion',
-        message: 'dragon-store version: ',
-        default: storeVersion
+        name: 'certsImage',
+        message: 'dragon-certs image tag: ',
+        default: certsImage
       },
       {
         type: 'input',
-        name: 'certsVersion',
-        message: 'dragon-certs version: ',
-        default: certsVersion
-      },
-      {
-        type: 'input',
-        name: 'proxyVersion',
-        message: 'dragon-proxy version: ',
-        default: proxyVersion
+        name: 'proxyImage',
+        message: 'dragon-proxy image tag: ',
+        default: proxyImage
       },
       {
         type: 'list',
@@ -240,16 +242,15 @@ var getUserInputs = function() {
 function validateUserInputs(answers) {
 
   site = answers.siteHostname;
-  socket = answers.socketHostname;
+  api = answers.apiHostname;
   apiKey = answers.apiKey;
   debug = answers.debug;
 
-  dockerRegistry = answers.dockerRegistry;
-  siteVersion = answers.siteVersion;
-  storeVersion = answers.storeVersion;
-  certsVersion = answers.certsVersion;
-  proxyVersion = answers.proxyVersion;
-  socketVersion = answers.socketVersion;
+  siteImage = answers.siteImage;
+  storeImage = answers.storeImage;
+  certsImage = answers.certsImage;
+  proxyImage = answers.proxyImage;
+  apiImage = answers.apiImage;
 
   inquirer.prompt([
   {
@@ -280,85 +281,96 @@ function updateConfigFiles(){
   //console.log("Updating configurations ... ");
   logger.log("info", "Updating configurations");
   shell.cd(homeDir);
-  shell.cp(path.join(__dirname, "platform.env.example"), path.join(homeDir, "platform.env"));
-  shell.cp(path.join(__dirname, ".env"), path.join(homeDir, ".env"));
+  shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
+  shell.cp(path.join(__dirname, ".env"), confFile);
   shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
-  shell.ln('-sf', path.join(__dirname, "DragonCerts"), path.join(homeDir, "DragonCerts"));
-  shell.ln('-sf', path.join(__dirname, "DragonChain"), path.join(homeDir, "DragonChain"));
-  shell.ln('-sf', path.join(__dirname, "DragonProxy"), path.join(homeDir, "DragonProxy"));
-  shell.ln('-sf', path.join(__dirname, "DragonSite"), path.join(homeDir, "DragonSite"));
-  shell.ln('-sf', path.join(__dirname, "DragonSockets"), path.join(homeDir, "DragonSockets"));
-  shell.ln('-sf', path.join(__dirname, "DragonStore"), path.join(homeDir, "DragonStore"));
-  shell.sed('-i', 'DEBUG=.*', "DEBUG=" + debug, 'platform.env');
-  shell.sed('-i', 'SITE_HOSTNAME=.*', "SITE_HOSTNAME=" + site, 'platform.env');
-  shell.sed('-i', 'SOCKET_HOSTNAME=.*', "SOCKET_HOSTNAME=" + socket, 'platform.env');
-  shell.sed('-i', 'SSL_API_KEY=.*', "SSL_API_KEY=" + apiKey, 'platform.env');
-  shell.sed('-i', 'DOCKER_REGISTRY_BASE=.*', "DOCKER_REGISTRY_BASE=" + dockerRegistry, '.env');
-  shell.sed('-i', 'SITE_VERSION=.*', "SITE_VERSION=" + siteVersion, '.env');
-  shell.sed('-i', 'STORE_VERSION=.*', "STORE_VERSION=" + storeVersion, '.env');
-  shell.sed('-i', 'CERTS_VERSION=.*', "CERTS_VERSION=" + certsVersion, '.env');
-  shell.sed('-i', 'PROXY_VERSION=.*', "PROXY_VERSION=" + proxyVersion, '.env');
-  shell.sed('-i', 'SOCKET_VERSION=.*', "SOCKET_VERSION=" + socketVersion, '.env');
+  shell.sed('-i', 'DEBUG=.*', "DEBUG=" + debug, platformFile);
+  shell.sed('-i', 'SITE_HOSTNAME=.*', "SITE_HOSTNAME=" + site, platformFile);
+  shell.sed('-i', 'API_HOSTNAME=.*', "API_HOSTNAME=" + api, platformFile);
+  shell.sed('-i', 'SSL_API_KEY=.*', "SSL_API_KEY=" + apiKey, platformFile);
+  shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
+  shell.sed('-i', 'STORE_IMAGE=.*', "STORE_IMAGE=" + storeImage, confFile);
+  shell.sed('-i', 'CERTS_IMAGE=.*', "CERTS_IMAGE=" + certsImage, confFile);
+  shell.sed('-i', 'PROXY_IMAGE=.*', "PROXY_IMAGE=" + proxyImage, confFile);
+  shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
 }
 
 function composeBuild(){
-  console.log("Building docker images ... ");
-  logger.log("info", "Bilding docker images");
-  shell.exec('docker-compose build', function(code, stdout, stderr) {
-    console.log(stdout);
-    logger.log("info", "docker-compose build\n" + stdout);
-    if (code !== 0) {
-      logger.log('Error', "Code: " + code + ", msg: " + stderr);
-      console.log('Error', "Code: " + code + ", msg: " + stderr);
-    }
+
+  shell.config.silent = false;
+  imageTag = "";
+  inquirer.prompt([
+  {
+    type: 'list',
+    message: 'Build component',
+    name: 'component',
+    choices: [
+      {
+          name: 'Site'
+      }
+     // },
+     // {
+     //     name: 'API'
+     // }
+    ]
+  },
+  {
+    type: 'input',
+    name: 'tagName',
+    message: 'Image tag name: ',
+    default: "docker.io/dragonsystem/customname:0.0.1-rc1"
+  }
+  ]).then(function (answers) {
+    imageTag = answers.tagName;
+    component = answers.component;
+    // run a sed and update .env file.
+    shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + imageTag, confFile);
+    shell.config.silent = false;
+    console.log("Building code for " + component  + " ... ");
+    shell.exec("npm install --verbose && bower install --verbose && polymer build", function(code, stdout, stderr) {
+      console.log(stdout);
+      logger.log("info", "Building source.\n" + stdout);
+      if (code !== 0) {
+        logger.log('Error', "Code: " + code + ", msg: " + stderr);
+        console.log('Error', "Code: " + code + ", msg: " + stderr);
+      } else {
+        console.log("Building docker image for " + imageTag + " ... ");
+        logger.log("info", "Bilding docker images");
+        shell.exec("docker build -t " + imageTag + " .", function(code, stdout, stderr) {
+          console.log(stdout);
+          logger.log("info", "docker build -t " + imageTag + " .\n" + stdout);
+          if (code !== 0) {
+            logger.log('Error', "Code: " + code + ", msg: " + stderr);
+            console.log('Error', "Code: " + code + ", msg: " + stderr);
+          }
+        });
+      }
+    });
   });
 }
 
 function composeUp(){
   console.log("Starting up docker containers ... ");
   logger.log("info", "Starting up docker containers");
-  shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
+  shell.exec('docker-compose up -d', function(code, stdout, stderr) {
     console.log(stdout);
-    logger.log("info", "docker-compose up -d --no-build\n" + stdout);
-    if (code !== 0) {
-      logger.log('Error', "Code: " + code + ", msg: " + stderr);
-      console.log('Error', "Code: " + code + ", msg: " + stderr);
-    }
-  });
-}
-
-function composeBuildAndRun(){
-  console.log("Building docker images ... ");
-  logger.log("info", "Bilding docker images");
-  shell.exec('docker-compose build', function(code, stdout, stderr) {
-    console.log(stdout);
-    logger.log("info", "docker-compose build\n" + stdout);
+    logger.log("info", "docker-compose up -d\n" + stdout);
     if (code !== 0) {
       logger.log('Error', "Code: " + code + ", msg: " + stderr);
       console.log('Error', "Code: " + code + ", msg: " + stderr);
     } else {
-      console.log("Starting up docker containers ... ");
-      logger.log("info", "Starting up docker containers");
-      shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
-        console.log(stdout);
-        logger.log("info", "docker-compose up -d --no-build\n" + stdout);
-        if (code !== 0) {
-          logger.log('Error', "Code: " + code + ", msg: " + stderr);
-          console.log('Error', "Code: " + code + ", msg: " + stderr);
-        } else {
-          console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
-          console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
-          console.log(chalk.blue("Add following lines to the file"));
-          console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + site)));
-          console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + socket)));
-          console.log(chalk.blue("Save and exit using \'<Esc> :wq\'"));
-        }
-      });
+      console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
+      console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
+      console.log(chalk.blue("Add following lines to the file"));
+      console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + site)));
+      console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + api)));
+      console.log(chalk.blue("Save and exit using \'<Esc> :wq\'"));
     }
   });
 }
 
 function composePull(){
+  shell.config.silent = false;
   console.log("Pulling docker images ... ");
   logger.log("info", "Pulling docker images");
   shell.exec('docker-compose pull', function(code, stdout, stderr) {
@@ -371,31 +383,34 @@ function composePull(){
   });
 }
 
-function composePullAndRun(){
-  console.log("Pulling docker images ... ");
-  logger.log("info", "Pulling docker images");
-  shell.exec('docker-compose pull', function(code, stdout, stderr) {
-    console.log(stdout);
-    logger.log("info", "docker-compose pull\n" + stdout);
-    if (code !== 0) {
-      logger.log('Error', "Code: " + code + ", msg: " + stderr);
-      console.log('Error', "Code: " + code + ", msg: " + stderr);
-    } else {
-      console.log("Starting up docker containers ... ");
-      logger.log("info", "Starting up docker containers");
-      shell.exec('docker-compose up -d --no-build', function(code, stdout, stderr) {
-        console.log(stdout);
-        logger.log("info", "docker-compose up -d --no-build\n" + stdout);
-        if (code !== 0) {
-          logger.log('Error', "Code: " + code + ", msg: " + stderr);
-          console.log('Error', "Code: " + code + ", msg: " + stderr);
-        } else {
-          console.log(chalk.blue("Update DNS to point " + site + " and " + socket + " to this server."));
-        }
-      });
-    }
-  });
-}
+//function composePullAndRun(){
+//  console.log("Pulling docker images ... ");
+//  logger.log("info", "Pulling docker images");
+//  //getUserInputs().then(
+//  // Get user inputs. pull and start
+//  //);
+//  shell.exec('docker-compose pull', function(code, stdout, stderr) {
+//    console.log(stdout);
+//    logger.log("info", "docker-compose pull\n" + stdout);
+//    if (code !== 0) {
+//      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+//      console.log('Error', "Code: " + code + ", msg: " + stderr);
+//    } else {
+//      console.log("Starting up docker containers ... ");
+//      logger.log("info", "Starting up docker containers");
+//      shell.exec('docker-compose up -d', function(code, stdout, stderr) {
+//        console.log(stdout);
+//        logger.log("info", "docker-compose up -d\n" + stdout);
+//        if (code !== 0) {
+//          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+//          console.log('Error', "Code: " + code + ", msg: " + stderr);
+//        } else {
+//          console.log(chalk.blue("Update DNS to point " + site + " and " + api + " to this server."));
+//        }
+//      });
+//    }
+//  });
+//}
 
 function composePush(){
   console.log("Pushing images to docker registry ... ");
@@ -481,7 +496,26 @@ function composeLogs(log){
   }
 }
 
+function composeGet(repo){
+  if (repo == true){
+    console.log("Usage: dragon get <Site|Api|Store|Proxy|Certs|Chain>\n" +
+      "Example: dragon get Site");
+  } else {
+  shell.exec("git clone https://github.com/DragonSystems/Dragon" + repo + ".git ", function(code, stdout, stderr) {
+    console.log(stdout);
+    if (code !== 0) {
+          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+          console.log('Error', "Code: " + code + ", msg: " + stderr);
+      }
+  });
+  }
+}
+
 function dragonInit(){
+  shell.cd(homeDir);
+  shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
+  shell.cp(path.join(__dirname, ".env"), confFile);
+  shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
   getInterface()
     .then(validateDocker)
     .then(loadEnv)
@@ -513,25 +547,27 @@ if (process.argv.length == 2) {
     .then(loadPlatform);
 }
 
-
-if (cmd.start || cmd.desktop) {
+if (cmd.start) {
   if (validateConfigs()){
     shell.cd(homeDir);
-    composeBuildAndRun();
+    composeUp();
   }
 }
 
 if (cmd.init) {
-  if (validateConfigs()){
-    shell.cd(homeDir);
-    dragonInit();
-  }
+  shell.cd(homeDir);
+  dragonInit();
 }
 
 if (cmd.server) {
   if (validateConfigs()){
     shell.cd(homeDir);
-    composePullAndRun();
+    //composePullAndRun();
+    getInterface()
+      .then(validateDocker)
+      .then(loadEnv)
+      .then(loadPlatform)
+      .then(getUserInputs);
   }
 }
 
@@ -544,7 +580,6 @@ if (cmd.ps) {
 
 if (cmd.build) {
   if (validateConfigs()){
-    shell.cd(homeDir);
     composeBuild();
   }
 }
@@ -574,6 +609,12 @@ if (cmd.logs) {
   if (validateConfigs()){
     shell.cd(homeDir);
     composeLogs(cmd.logs);
+  }
+}
+
+if (cmd.get) {
+  if (validateConfigs()){
+    composeGet(cmd.get);
   }
 }
 
