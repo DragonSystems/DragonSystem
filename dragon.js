@@ -325,8 +325,9 @@ function composeBuild(){
     component = answers.component;
     // run a sed and update .env file.
     shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + imageTag, confFile);
+    shell.config.silent = false;
     console.log("Building code for " + component  + " ... ");
-    shell.exec("npm install && bower install && polymer build", function(code, stdout, stderr) {
+    shell.exec("npm install --verbose && bower install --verbose && polymer build", function(code, stdout, stderr) {
       console.log(stdout);
       logger.log("info", "Building source.\n" + stdout);
       if (code !== 0) {
