@@ -34,6 +34,16 @@ At the moment dragon-system will only work on Mac OSX and Linux.
 
 ### Run a test setup
 
+Create a workplace (you can use any name for the directory) where you clone the DragonSite and DragonAPI.
+
+`mkdir dragon-workspace`
+
+Change the directory to that directory
+
+`cd dragon-workspace`
+
+When ever you run `dragon` commands, **make sure** you run it within this directory.
+
 #### Initialize the system
 
 `dragon init`
@@ -48,16 +58,26 @@ At the moment dragon-system will only work on Mac OSX and Linux.
 ? Site domain name: www.drageth.com
 ? API domain name: sws.drageth.com
 ? NS1 API key: <20 character api key>
-? dragon-site image tag:  docker.io/dragonsystems/dragonsite:0.0.1
-? dragon-api image tag:  docker.io/dragonsystems/dragonapi:0.0.1
-? dragon-store image tag:  docker.io/dragonsystems/dragonstore:0.0.1
-? dragon-certs image tag:  docker.io/dragonsystems/dragoncert:0.0.1
-? dragon-proxy image tag:  docker.io/dragonsystems/dragonproxy:0.0.1
 ? Debug mode enabled or disabled? Enable
 ? Continue on installation? Yes
 ```
 
 **Note**:-  You have to obtain an NS1 API key and two domain to proceed. 
+
+After running the `dragon init` you can see the cloned site and api repos in the directory by running an `ls`
+
+`ls`
+
+```[localhost dragon-workplace]$ ls
+DragonAPI  DragonSite
+```
+
+#### Build the cloned source of Site and API
+
+`dragon build`
+
+**Note**:- This will take sometime and you will feels like its hanged. But give some time since its building the source.
+
 
 #### Pull docker images from docker hub
 
@@ -93,9 +113,13 @@ dragon_api_1      node socket.js        Up      8011/tcp
 dragon_store_1    /bin/sh -c /startup   Up      4001/tcp, 5001/tcp, 90
 ```
 
+**Note**:- Make sure all 6 services are `Up`. If not use the following `dragon logs <option>` to go through each failed components log and find the issue. In general if the *certs* failed it will result to fail proxy service. If an *site* or *API* service fail it will result to fail the proxy service again. First make sure *certs* is working and got proper certificates. Then *API* and *site* is up and running. *Proxy* service after that. And finally store and chain. 
+
 #### Check logs of each system
 
-`dragon logs <certs/site/etc...>`
+`dragon logs <certs/site/api/>`
+
+`dragon logs certs`
 
 ```Attaching to dragon_certs_1
 certs_1   | Reading environment variables ...
@@ -128,13 +152,19 @@ certs_1   | Cron is running - Thu Sep 14 14:46:01 UTC 2017
 
 First of all run a test setup, it will validate the environment and install basic images for you.
 
-#### Get the site source code
+#### Modify source code
 
-Go to a desired directory and run;
+Update the code in the `dragon-workplace`. If there is *a setup running make sure to stop/kill it and clean container volues*. That is because we are using caching in both browser and proxy level. Though you clean the browser cache sometimes you will get content from the proxy cache wich is out-dated with your change.
 
-`dragon get Site`
+#### Stop existing running services.
 
-This will clone the DragonSite to the current directory. Do you modifications in that and run following command in the root of that directory.
+`dragon kill`
+
+#### Clear volumes to clear cache.
+
+`dragon rm`
+
+#### Build the modified code.
 
 `dragon build`
 
@@ -144,29 +174,8 @@ This will clone the DragonSite to the current directory. Do you modifications in
 Building code for Site ... 
 ```
 
-It will build the source code and then build the docker image with the given tag.
+#### Start the service.
 
-**Note**:- Image tag it the docker image name and version that you build your custom changes into. This name matters only if you are planning to push it into a registry. Otherwise system will use the local cache. But we recommend you to use a repository so then you can push and pull from it without any issue and you can maintain different versions of your changes properly. You can get a free public docker hosting space from [docker hub](https://hub.docker.com).
-
-#### Push the build docker image to registry.
-
-`dragon push` 
-
-It will push the images to the registry as mentioned in the tag
-
-### Run it in a server
-
-#### Initialize server configurations
-
-`dragon server`
-
-In the server initialization, give the custom tag you gave for the site and use others as defaults. Make sure you disable debug option to get proper live certificates from Let's encrypt
-
-#### Pull docker images from docker hub
-
-`dragon pull`
-
-#### Start docker containers
 
 `dragon start`
 
@@ -180,8 +189,7 @@ Add following lines to the file
 Save and exit using '<Esc> :wq'
 ```
 
-Ignore the hosts update and add DNS entries to point to the running server.
-
+TODO: Build docker images with new changes.
 
 ### Clean the environment
 
