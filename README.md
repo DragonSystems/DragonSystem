@@ -42,7 +42,7 @@ Change the directory to that directory
 
 `cd dragon-workspace`
 
-When ever you run `dragon` commands, **make sure** you run it within this directory.
+**Whenever you run `dragon` commands, make sure you run it within this directory**.
 
 #### Initialize the system
 
