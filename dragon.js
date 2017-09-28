@@ -12,6 +12,7 @@ var sleep = require('system-sleep');
 var ProgressBar = require('progress');
 var logger = require('winston');
 var properties = require ("properties");
+var datetime = require('node-datetime');
 
 shell.config.silent = true;
 var homeDir = path.join(os.homedir(), ".dragon");
@@ -64,8 +65,8 @@ var getInterface = function() {
         }
         console.log(chalk.bold.hex('#FF0033')(data));
         console.log(chalk.hex('#C8C420')('                                                                   v0.01'));
+        resolve({data:'200'});
       });
-    resolve({data:'200'});
     }, 2000);
   });
   return promise;
@@ -114,17 +115,19 @@ var validateDocker= function() {
 var getSource = function() {
   var promise = new Promise(function(resolve, reject){
     setTimeout(function(){
+      console.log("Cloning DragonSite ...")
       shell.exec("git clone https://github.com/DragonSystems/DragonSite.git ", function(code, stdout, stderr) {
-        //console.log(stdout);
         if (code !== 0) {
               logger.log('Error', "Code: " + code + ", msg: " + stderr);
               console.log('Error', "Code: " + code + ", msg: " + stderr);
           } else {
+            console.log("Cloning DragonAPI ...")
             shell.exec("git clone https://github.com/DragonSystems/DragonAPI.git ", function(code, stdout, stderr) {
-              //console.log(stdout);
               if (code !== 0) {
                     logger.log('Error', "Code: " + code + ", msg: " + stderr);
                     console.log('Error', "Code: " + code + ", msg: " + stderr);
+                } else {
+                  shell.sed('-i', 'WORKSPACE=.*', "WORKSPACE=" + shell.pwd(), confFile);
                 }
             });
           }
@@ -146,9 +149,9 @@ var loadEnv = function() {
           certsImage = data.CERTS_IMAGE;
           proxyImage = data.PROXY_IMAGE;
           apiImage = data.API_IMAGE;
+          resolve({data:'200'});
         });
       }
-    resolve({data:'200'});
     }, 200);
   });
   return promise;
@@ -163,9 +166,9 @@ var loadPlatform = function() {
           apiKey = data.SSL_API_KEY;
           site = data.SITE_HOSTNAME;
           api = data.API_HOSTNAME;
+          resolve({data:'200'});
         });
       }
-    resolve({data:'200'});
     }, 200);
   });
   return promise;
@@ -257,9 +260,9 @@ var getUserInputs = function() {
       }
       ]).then(function (answers) {
         validateUserInputs(answers);
+        resolve({data:'200'});
       });
       //
-    resolve({data:'200'});
     }, 2000);
   });
   return promise;
@@ -321,6 +324,30 @@ function updateConfigFiles(){
   //shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
 }
 
+var getRegistryHome = function() {
+  var promise = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      inquirer.prompt([
+      {
+        type: 'input',
+        name: 'registryHome',
+        message: 'Docker registry home',
+        default: "docker.io/dragonsystems",
+      }
+      ]).then(function (answers) {
+        var tag = datetime.create().format('YmdHM');
+        apiImage = answers.registryHome + "/dragonapi:" + tag
+        siteImage = answers.registryHome + "/dragonsite:" + tag
+        shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
+        shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
+        resolve({data:'200'});
+      });
+    }, 200);
+  });
+  return promise;
+}
+
+
 function sourceBuild(){
   // build site
   shell.cd(workspace + "/DragonSite");
@@ -359,7 +386,7 @@ var dockerBuild = function(){
     shell.cd(workspace + "/DragonSite");
     shell.config.silent = false;
     console.log("Building DragonSite custom docker image");
-    shell.exec("docker build -t site .", function(code, stdout, stderr) {
+    shell.exec("docker build -t " + siteImage + " .", function(code, stdout, stderr) {
       logger.log("info", "Building DragonSite custom docker image\n" + stdout);
       if (code !== 0) {
         logger.log('Error', "Code: " + code + ", msg: " + stderr);
@@ -371,7 +398,7 @@ var dockerBuild = function(){
         shell.cd(workspace + "/DragonAPI");
         shell.config.silent = false;
         console.log("Building DragonAPI custom docker image");
-        shell.exec("docker build -t api .", function(code, stdout, stderr) {
+        shell.exec("docker build -t " + apiImage + " .", function(code, stdout, stderr) {
           logger.log("info", "Building DragonAPI custom docker image\n" + stdout);
           if (code !== 0) {
             logger.log('Error', "Code: " + code + ", msg: " + stderr);
@@ -553,12 +580,12 @@ function dragonInit(){
   //shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
   //shell.cp(path.join(__dirname, ".env"), confFile);
   //shell.cp(path.join(__dirname, "docker-compose.yaml"), composeFile);
-  getSource()
-    .then(validateDocker)
+  validateDocker()
     .then(loadEnv)
     .then(loadPlatform)
     .then(getInterface)
-    .then(getUserInputs);
+    .then(getUserInputs)
+    .then(getSource);
 }
 
 function validateConfigs(){
@@ -594,7 +621,6 @@ if (cmd.start) {
 
 if (cmd.init) {
   dragonInit();
-  shell.sed('-i', 'WORKSPACE=.*', "WORKSPACE=" + shell.pwd(), confFile);
 }
 
 if (cmd.server) {
@@ -618,7 +644,9 @@ if (cmd.ps) {
 
 if (cmd.build) {
   if (validateConfigs()){
-    sourceBuild();
+    loadEnv()
+      .then(loadPlatform)
+      .then(sourceBuild);
   }
 }
 
@@ -652,7 +680,9 @@ if (cmd.logs) {
 
 if (cmd.push) {
   if (validateConfigs()){
-    loadEnv()
+    getInterface()
+      .then(getRegistryHome)
+      .then(loadEnv)
       .then(loadPlatform)
       .then(dockerBuild);
     //composePush();
