@@ -47,7 +47,7 @@ cmd.option('ps', 'Show running status')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
   .option('pull', 'Pull all docker images from a docker registries')
-  .version('0.1.0', '-v, --version', 'Output the version number')
+  .version('0.0.1-rc.7', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
 var getInterface = function() {
