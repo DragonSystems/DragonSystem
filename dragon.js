@@ -354,6 +354,40 @@ function sourceBuild(){
   });
 }
 
+var dockerBuild = function(){
+  var promise = new Promise(function(resolve, reject){
+    shell.cd(workspace + "/DragonSite");
+    shell.config.silent = false;
+    console.log("Building DragonSite custom docker image");
+    shell.exec("docker build -t site .", function(code, stdout, stderr) {
+      logger.log("info", "Building DragonSite custom docker image\n" + stdout);
+      if (code !== 0) {
+        logger.log('Error', "Code: " + code + ", msg: " + stderr);
+        console.log('Error', "Code: " + code + ", msg: " + stderr);
+        shell.cd(workspace);
+      } else {
+        shell.config.silent = true;
+        // build api
+        shell.cd(workspace + "/DragonAPI");
+        shell.config.silent = false;
+        console.log("Building DragonAPI custom docker image");
+        shell.exec("docker build -t api .", function(code, stdout, stderr) {
+          logger.log("info", "Building DragonAPI custom docker image\n" + stdout);
+          if (code !== 0) {
+            logger.log('Error', "Code: " + code + ", msg: " + stderr);
+            console.log('Error', "Code: " + code + ", msg: " + stderr);
+            shell.cd(workspace);
+          } else {
+            shell.cd(workspace);
+          }
+        });
+      }
+    });
+    resolve({data:'200'});
+  });
+  return promise;
+}
+
 function composeUp(){
   console.log("Starting up docker containers ... ");
   logger.log("info", "Starting up docker containers");
@@ -618,8 +652,10 @@ if (cmd.logs) {
 
 if (cmd.push) {
   if (validateConfigs()){
-    shell.cd(homeDir);
-    composePush();
+    loadEnv()
+      .then(loadPlatform)
+      .then(dockerBuild);
+    //composePush();
   }
 }
 
