@@ -100,13 +100,14 @@ var validateDocker= function() {
                   console.log("Use this guide to install " + chalk.bold("git") +
                     " in the system:\n\t" + chalk.italic("https://git-scm.com/book/en/v2/Getting-Started-Installing-Git"));
                   process.exit(0);
+                } else {
+                  resolve({data:'200'});
                 }
               });
             }
           });
         }
       });
-    resolve({data:'200'});
     }, 200);
   });
   return promise;
@@ -128,11 +129,11 @@ var getSource = function() {
                     console.log('Error', "Code: " + code + ", msg: " + stderr);
                 } else {
                   shell.sed('-i', 'WORKSPACE=.*', "WORKSPACE=" + shell.pwd(), confFile);
+                  resolve({data:'200'});
                 }
             });
           }
       });
-      resolve({data:'200'});
     }, 5000);
   });
   return promise;
@@ -406,11 +407,37 @@ var dockerBuild = function(){
             shell.cd(workspace);
           } else {
             shell.cd(workspace);
+            resolve({data:'200'});
           }
         });
       }
     });
-    resolve({data:'200'});
+  });
+  return promise;
+}
+
+var dockerPush = function(){
+  var promise = new Promise(function(resolve, reject){
+    shell.config.silent = false;
+    console.log("Pushing dragonsite to docker registry");
+    shell.exec("docker push " + siteImage, function(code, stdout, stderr) {
+      logger.log("Pushing dragonsite to docker registry\n" + stdout);
+      if (code !== 0) {
+        logger.log('Error', "Code: " + code + ", msg: " + stderr);
+        console.log('Error', "Code: " + code + ", msg: " + stderr);
+      } else {
+        console.log("Pushing dragonapi to docker registry");
+        shell.exec("docker push " + apiImage, function(code, stdout, stderr) {
+          logger.log("Pushing dragonapi to docker registry\n" + stdout);
+          if (code !== 0) {
+            logger.log('Error', "Code: " + code + ", msg: " + stderr);
+            console.log('Error', "Code: " + code + ", msg: " + stderr);
+          } else {
+            resolve({data:'200'});
+          }
+        });
+      }
+    });
   });
   return promise;
 }
@@ -602,7 +629,7 @@ if (process.argv.length == 2) {
       setTimeout(function(){
         console.log("Usage: " + chalk.red("dragon [option]"));
         console.log("       " + chalk.red("dragon --help") + "\t to view available options\n");
-      resolve({data:'200'});
+        resolve({data:'200'});
       }, 200);
     });
     return promise;
@@ -684,8 +711,8 @@ if (cmd.push) {
       .then(getRegistryHome)
       .then(loadEnv)
       .then(loadPlatform)
-      .then(dockerBuild);
-    //composePush();
+      .then(dockerBuild)
+      .then(dockerPush);
   }
 }
 
