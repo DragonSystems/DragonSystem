@@ -15,6 +15,7 @@ var properties = require ("properties");
 
 shell.config.silent = true;
 var homeDir = path.join(os.homedir(), ".dragon");
+var workspace = os.homedir();
 var debug = "Enable";
 var site = "www.example.com";
 var api = "api.example.com";
@@ -139,6 +140,7 @@ var loadEnv = function() {
     setTimeout(function(){
       if (shell.test('-f', confFile)) {
         properties.parse(confFile, {path: true}, function (error, data){
+          workspace = data.WORKSPACE;
           siteImage = data.SITE_IMAGE;
           storeImage = data.STORE_IMAGE;
           certsImage = data.CERTS_IMAGE;
@@ -319,10 +321,9 @@ function updateConfigFiles(){
   //shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
 }
 
-function composeBuild(){
-  var cwd = shell.pwd();
+function sourceBuild(){
   // build site
-  shell.cd(cwd + "/DragonSite");
+  shell.cd(workspace + "/DragonSite");
   shell.config.silent = false;
   console.log("Building DragonSite code base");
   shell.exec("npm install --verbose && bower install --verbose && polymer build", function(code, stdout, stderr) {
@@ -331,11 +332,11 @@ function composeBuild(){
     if (code !== 0) {
       logger.log('Error', "Code: " + code + ", msg: " + stderr);
       console.log('Error', "Code: " + code + ", msg: " + stderr);
-      shell.cd(cwd);
+      shell.cd(workspace);
     } else {
       shell.config.silent = true;
       // build api
-      shell.cd(cwd + "/DragonAPI");
+      shell.cd(workspace + "/DragonAPI");
       shell.config.silent = false;
       console.log("Building DragonAPI code base");
       shell.exec("npm install --verbose", function(code, stdout, stderr) {
@@ -344,9 +345,9 @@ function composeBuild(){
         if (code !== 0) {
           logger.log('Error', "Code: " + code + ", msg: " + stderr);
           console.log('Error', "Code: " + code + ", msg: " + stderr);
-          shell.cd(cwd);
+          shell.cd(workspace);
         } else {
-          shell.cd(cwd);
+          shell.cd(workspace);
         }
       });
     }
@@ -552,7 +553,6 @@ if (process.argv.length == 2) {
 
 if (cmd.start) {
   if (validateConfigs()){
-    shell.sed('-i', 'CWD=.*', "CWD=" + shell.pwd(), confFile);
     shell.cd(homeDir);
     composeUp();
   }
@@ -560,6 +560,7 @@ if (cmd.start) {
 
 if (cmd.init) {
   dragonInit();
+  shell.sed('-i', 'WORKSPACE=.*', "WORKSPACE=" + shell.pwd(), confFile);
 }
 
 if (cmd.server) {
@@ -583,7 +584,7 @@ if (cmd.ps) {
 
 if (cmd.build) {
   if (validateConfigs()){
-    composeBuild();
+    sourceBuild();
   }
 }
 

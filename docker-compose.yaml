@@ -14,7 +14,7 @@ services:
     depends_on:
       - certs
     volumes:
-      - ${CWD}/DragonSite:/root
+      - ${WORKSPACE}/DragonSite:/root
 
   store:
     image: "${STORE_IMAGE}"
@@ -44,7 +44,7 @@ services:
       - store
       - chain
     volumes:
-      - ${CWD}/DragonAPI:/root
+      - ${WORKSPACE}/DragonAPI:/root
     command:
       - 'socket.js'
 
