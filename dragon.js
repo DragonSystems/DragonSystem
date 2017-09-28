@@ -39,7 +39,7 @@ logger.remove(logger.transports.Console);
 cmd.option('ps', 'Show running status')
   .option('init', 'initialize configurations')
   .option('start', 'Start dragon system. (For servers use server option)')
-  .option('server', 'Run dragon system in a server')
+  .option('server', 'Initialize dragon system in a server environment')
   .option('build', 'Build custom docker images')
   .option('logs [name]', 'Get docker logs',  /^(site|api|store|proxy|certs|parity)$/i)
   .option('stop', 'Stop all running dockers')
@@ -67,7 +67,7 @@ var getInterface = function() {
         console.log(chalk.hex('#C8C420')('                                                                   v0.01'));
         resolve({data:'200'});
       });
-    }, 2000);
+    }, 200);
   });
   return promise;
 }
@@ -175,6 +175,34 @@ var loadPlatform = function() {
   return promise;
 }
 
+var getServerInputs = function() {
+  var promise = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      inquirer.prompt([
+      {
+        type: 'input',
+        name: 'siteImage',
+        message: 'dragon-site image tag: ',
+        default: siteImage
+      },
+      {
+        type: 'input',
+        name: 'apiImage',
+        message: 'dragon-api image tag: ',
+        default: apiImage
+      }
+      ]).then(function (answers) {
+        apiImage = answers.apiImage;
+        siteImage = answers.siteImage;
+        shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
+        shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
+        resolve({data:'200'});
+      });
+    }, 2000);
+  });
+  return promise;
+}
+
 var getUserInputs = function() {
   var promise = new Promise(function(resolve, reject){
     setTimeout(function(){
@@ -263,7 +291,6 @@ var getUserInputs = function() {
         validateUserInputs(answers);
         resolve({data:'200'});
       });
-      //
     }, 2000);
   });
   return promise;
@@ -651,15 +678,12 @@ if (cmd.init) {
 }
 
 if (cmd.server) {
-  if (validateConfigs()){
-    shell.cd(homeDir);
-    //composePullAndRun();
-    getInterface()
-      .then(validateDocker)
-      .then(loadEnv)
-      .then(loadPlatform)
-      .then(getUserInputs);
-  }
+  validateDocker()
+    .then(loadEnv)
+    .then(loadPlatform)
+    .then(getInterface)
+    .then(getUserInputs)
+    .then(getServerInputs);
 }
 
 if (cmd.ps) {
