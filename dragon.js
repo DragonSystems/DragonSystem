@@ -12,9 +12,11 @@ var sleep = require('system-sleep');
 var ProgressBar = require('progress');
 var logger = require('winston');
 var properties = require ("properties");
+var datetime = require('node-datetime');
 
 shell.config.silent = true;
 var homeDir = path.join(os.homedir(), ".dragon");
+var workspace = os.homedir();
 var debug = "Enable";
 var site = "www.example.com";
 var api = "api.example.com";
@@ -27,6 +29,7 @@ var proxyImage = "latest"
 var logfile = path.join(homeDir, "dragon.log");
 var confFile = path.join(homeDir, ".env");
 var platformFile = path.join(homeDir, "platform.env");
+var composeFile = path.join(homeDir, "docker-compose.yaml");
 
 shell.mkdir('-p', homeDir);
 
@@ -35,9 +38,8 @@ logger.remove(logger.transports.Console);
 
 cmd.option('ps', 'Show running status')
   .option('init', 'initialize configurations')
-  .option('get [name]', 'fetch code from git to current directory',/^(Site|Api|Store|Proxy|Certs|Chain)$/)
   .option('start', 'Start dragon system. (For servers use server option)')
-  .option('server', 'Run dragon system in a server')
+  .option('server', 'Initialize dragon system in a server environment')
   .option('build', 'Build custom docker images')
   .option('logs [name]', 'Get docker logs',  /^(site|api|store|proxy|certs|parity)$/i)
   .option('stop', 'Stop all running dockers')
@@ -45,7 +47,7 @@ cmd.option('ps', 'Show running status')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
   .option('pull', 'Pull all docker images from a docker registries')
-  .version('0.1.0', '-v, --version', 'Output the version number')
+  .version('0.0.1-rc.7', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
 var getInterface = function() {
@@ -63,8 +65,8 @@ var getInterface = function() {
         }
         console.log(chalk.bold.hex('#FF0033')(data));
         console.log(chalk.hex('#C8C420')('                                                                   v0.01'));
+        resolve({data:'200'});
       });
-    resolve({data:'200'});
     }, 200);
   });
   return promise;
@@ -98,14 +100,41 @@ var validateDocker= function() {
                   console.log("Use this guide to install " + chalk.bold("git") +
                     " in the system:\n\t" + chalk.italic("https://git-scm.com/book/en/v2/Getting-Started-Installing-Git"));
                   process.exit(0);
+                } else {
+                  resolve({data:'200'});
                 }
               });
             }
           });
         }
       });
-    resolve({data:'200'});
     }, 200);
+  });
+  return promise;
+}
+
+var getSource = function() {
+  var promise = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      console.log("Cloning DragonSite ...")
+      shell.exec("git clone https://github.com/DragonSystems/DragonSite.git ", function(code, stdout, stderr) {
+        if (code !== 0) {
+              logger.log('Error', "Code: " + code + ", msg: " + stderr);
+              console.log('Error', "Code: " + code + ", msg: " + stderr);
+          } else {
+            console.log("Cloning DragonAPI ...")
+            shell.exec("git clone https://github.com/DragonSystems/DragonAPI.git ", function(code, stdout, stderr) {
+              if (code !== 0) {
+                    logger.log('Error', "Code: " + code + ", msg: " + stderr);
+                    console.log('Error', "Code: " + code + ", msg: " + stderr);
+                } else {
+                  shell.sed('-i', 'WORKSPACE=.*', "WORKSPACE=" + shell.pwd(), confFile);
+                  resolve({data:'200'});
+                }
+            });
+          }
+      });
+    }, 5000);
   });
   return promise;
 }
@@ -115,14 +144,15 @@ var loadEnv = function() {
     setTimeout(function(){
       if (shell.test('-f', confFile)) {
         properties.parse(confFile, {path: true}, function (error, data){
+          workspace = data.WORKSPACE;
           siteImage = data.SITE_IMAGE;
           storeImage = data.STORE_IMAGE;
           certsImage = data.CERTS_IMAGE;
           proxyImage = data.PROXY_IMAGE;
           apiImage = data.API_IMAGE;
+          resolve({data:'200'});
         });
       }
-    resolve({data:'200'});
     }, 200);
   });
   return promise;
@@ -137,10 +167,38 @@ var loadPlatform = function() {
           apiKey = data.SSL_API_KEY;
           site = data.SITE_HOSTNAME;
           api = data.API_HOSTNAME;
+          resolve({data:'200'});
         });
       }
-    resolve({data:'200'});
     }, 200);
+  });
+  return promise;
+}
+
+var getServerInputs = function() {
+  var promise = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      inquirer.prompt([
+      {
+        type: 'input',
+        name: 'siteImage',
+        message: 'dragon-site image tag: ',
+        default: siteImage
+      },
+      {
+        type: 'input',
+        name: 'apiImage',
+        message: 'dragon-api image tag: ',
+        default: apiImage
+      }
+      ]).then(function (answers) {
+        apiImage = answers.apiImage;
+        siteImage = answers.siteImage;
+        shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
+        shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
+        resolve({data:'200'});
+      });
+    }, 2000);
   });
   return promise;
 }
@@ -185,36 +243,36 @@ var getUserInputs = function() {
           return "Please check the API key again ... "
         }
       },
-      {
-        type: 'input',
-        name: 'siteImage',
-        message: 'dragon-site image tag: ',
-        default: siteImage
-      },
-      {
-        type: 'input',
-        name: 'apiImage',
-        message: 'dragon-api image tag: ',
-        default: apiImage
-      },
-      {
-        type: 'input',
-        name: 'storeImage',
-        message: 'dragon-store image tag: ',
-        default: storeImage
-      },
-      {
-        type: 'input',
-        name: 'certsImage',
-        message: 'dragon-certs image tag: ',
-        default: certsImage
-      },
-      {
-        type: 'input',
-        name: 'proxyImage',
-        message: 'dragon-proxy image tag: ',
-        default: proxyImage
-      },
+      //{
+      //  type: 'input',
+      //  name: 'siteImage',
+      //  message: 'dragon-site image tag: ',
+      //  default: siteImage
+      //},
+      //{
+      //  type: 'input',
+      //  name: 'apiImage',
+      //  message: 'dragon-api image tag: ',
+      //  default: apiImage
+      //},
+      //{
+      //  type: 'input',
+      //  name: 'storeImage',
+      //  message: 'dragon-store image tag: ',
+      //  default: storeImage
+      //},
+      //{
+      //  type: 'input',
+      //  name: 'certsImage',
+      //  message: 'dragon-certs image tag: ',
+      //  default: certsImage
+      //},
+      //{
+      //  type: 'input',
+      //  name: 'proxyImage',
+      //  message: 'dragon-proxy image tag: ',
+      //  default: proxyImage
+      //},
       {
         type: 'list',
         message: 'Debug mode enabled or disabled?',
@@ -231,10 +289,9 @@ var getUserInputs = function() {
       }
       ]).then(function (answers) {
         validateUserInputs(answers);
+        resolve({data:'200'});
       });
-      //
-    resolve({data:'200'});
-    }, 200);
+    }, 2000);
   });
   return promise;
 }
@@ -246,11 +303,11 @@ function validateUserInputs(answers) {
   apiKey = answers.apiKey;
   debug = answers.debug;
 
-  siteImage = answers.siteImage;
-  storeImage = answers.storeImage;
-  certsImage = answers.certsImage;
-  proxyImage = answers.proxyImage;
-  apiImage = answers.apiImage;
+  //siteImage = answers.siteImage;
+  //storeImage = answers.storeImage;
+  //certsImage = answers.certsImage;
+  //proxyImage = answers.proxyImage;
+  //apiImage = answers.apiImage;
 
   inquirer.prompt([
   {
@@ -280,78 +337,142 @@ function validateUserInputs(answers) {
 function updateConfigFiles(){
   //console.log("Updating configurations ... ");
   logger.log("info", "Updating configurations");
-  shell.cd(homeDir);
+  //shell.cd(homeDir);
   shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
   shell.cp(path.join(__dirname, ".env"), confFile);
-  shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
+  shell.cp(path.join(__dirname, "docker-compose.yaml"), composeFile);
   shell.sed('-i', 'DEBUG=.*', "DEBUG=" + debug, platformFile);
   shell.sed('-i', 'SITE_HOSTNAME=.*', "SITE_HOSTNAME=" + site, platformFile);
   shell.sed('-i', 'API_HOSTNAME=.*', "API_HOSTNAME=" + api, platformFile);
   shell.sed('-i', 'SSL_API_KEY=.*', "SSL_API_KEY=" + apiKey, platformFile);
-  shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
-  shell.sed('-i', 'STORE_IMAGE=.*', "STORE_IMAGE=" + storeImage, confFile);
-  shell.sed('-i', 'CERTS_IMAGE=.*', "CERTS_IMAGE=" + certsImage, confFile);
-  shell.sed('-i', 'PROXY_IMAGE=.*', "PROXY_IMAGE=" + proxyImage, confFile);
-  shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
+  //shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
+  //shell.sed('-i', 'STORE_IMAGE=.*', "STORE_IMAGE=" + storeImage, confFile);
+  //shell.sed('-i', 'CERTS_IMAGE=.*', "CERTS_IMAGE=" + certsImage, confFile);
+  //shell.sed('-i', 'PROXY_IMAGE=.*', "PROXY_IMAGE=" + proxyImage, confFile);
+  //shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
 }
 
-function composeBuild(){
-
-  shell.config.silent = false;
-  imageTag = "";
-  inquirer.prompt([
-  {
-    type: 'list',
-    message: 'Build component',
-    name: 'component',
-    choices: [
+var getRegistryHome = function() {
+  var promise = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      inquirer.prompt([
       {
-          name: 'Site'
+        type: 'input',
+        name: 'registryHome',
+        message: 'Docker registry home',
+        default: "docker.io/dragonsystems",
       }
-     // },
-     // {
-     //     name: 'API'
-     // }
-    ]
-  },
-  {
-    type: 'input',
-    name: 'tagName',
-    message: 'Image tag name: ',
-    default: "docker.io/dragonsystem/customname:0.0.1-rc1"
-  }
-  ]).then(function (answers) {
-    imageTag = answers.tagName;
-    component = answers.component;
-    // run a sed and update .env file.
-    shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + imageTag, confFile);
+      ]).then(function (answers) {
+        var tag = datetime.create().format('YmdHM');
+        apiImage = answers.registryHome + "/dragonapi:" + tag
+        siteImage = answers.registryHome + "/dragonsite:" + tag
+        shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
+        shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
+        resolve({data:'200'});
+      });
+    }, 200);
+  });
+  return promise;
+}
+
+
+function sourceBuild(){
+  // build site
+  shell.cd(workspace + "/DragonSite");
+  shell.config.silent = false;
+  console.log("Building DragonSite code base");
+  shell.exec("npm install --verbose && bower install --verbose && polymer build", function(code, stdout, stderr) {
+    console.log(stdout);
+    logger.log("info", "Building source of DragonSite.\n" + stdout);
+    if (code !== 0) {
+      logger.log('Error', "Code: " + code + ", msg: " + stderr);
+      console.log('Error', "Code: " + code + ", msg: " + stderr);
+      shell.cd(workspace);
+    } else {
+      shell.config.silent = true;
+      // build api
+      shell.cd(workspace + "/DragonAPI");
+      shell.config.silent = false;
+      console.log("Building DragonAPI code base");
+      shell.exec("npm install --verbose", function(code, stdout, stderr) {
+        console.log(stdout);
+        logger.log("info", "Building source of DragonAPI.\n" + stdout);
+        if (code !== 0) {
+          logger.log('Error', "Code: " + code + ", msg: " + stderr);
+          console.log('Error', "Code: " + code + ", msg: " + stderr);
+          shell.cd(workspace);
+        } else {
+          shell.cd(workspace);
+        }
+      });
+    }
+  });
+}
+
+var dockerBuild = function(){
+  var promise = new Promise(function(resolve, reject){
+    shell.cd(workspace + "/DragonSite");
     shell.config.silent = false;
-    console.log("Building code for " + component  + " ... ");
-    shell.exec("npm install --verbose && bower install --verbose && polymer build", function(code, stdout, stderr) {
-      console.log(stdout);
-      logger.log("info", "Building source.\n" + stdout);
+    console.log("Building DragonSite custom docker image");
+    shell.exec("docker build -t " + siteImage + " .", function(code, stdout, stderr) {
+      logger.log("info", "Building DragonSite custom docker image\n" + stdout);
       if (code !== 0) {
         logger.log('Error', "Code: " + code + ", msg: " + stderr);
         console.log('Error', "Code: " + code + ", msg: " + stderr);
+        shell.cd(workspace);
       } else {
-        console.log("Building docker image for " + imageTag + " ... ");
-        logger.log("info", "Bilding docker images");
-        shell.exec("docker build -t " + imageTag + " .", function(code, stdout, stderr) {
-          console.log(stdout);
-          logger.log("info", "docker build -t " + imageTag + " .\n" + stdout);
+        shell.config.silent = true;
+        // build api
+        shell.cd(workspace + "/DragonAPI");
+        shell.config.silent = false;
+        console.log("Building DragonAPI custom docker image");
+        shell.exec("docker build -t " + apiImage + " .", function(code, stdout, stderr) {
+          logger.log("info", "Building DragonAPI custom docker image\n" + stdout);
           if (code !== 0) {
             logger.log('Error', "Code: " + code + ", msg: " + stderr);
             console.log('Error', "Code: " + code + ", msg: " + stderr);
+            shell.cd(workspace);
+          } else {
+            shell.cd(workspace);
+            resolve({data:'200'});
           }
         });
       }
     });
   });
+  return promise;
+}
+
+var dockerPush = function(){
+  var promise = new Promise(function(resolve, reject){
+    shell.config.silent = false;
+    console.log("Pushing dragonsite to docker registry");
+    shell.exec("docker push " + siteImage, function(code, stdout, stderr) {
+      logger.log("Pushing dragonsite to docker registry\n" + stdout);
+      if (code !== 0) {
+        logger.log('Error', "Code: " + code + ", msg: " + stderr);
+        console.log('Error', "Code: " + code + ", msg: " + stderr);
+      } else {
+        console.log("Pushing dragonapi to docker registry");
+        shell.exec("docker push " + apiImage, function(code, stdout, stderr) {
+          logger.log("Pushing dragonapi to docker registry\n" + stdout);
+          if (code !== 0) {
+            logger.log('Error', "Code: " + code + ", msg: " + stderr);
+            console.log('Error', "Code: " + code + ", msg: " + stderr);
+          } else {
+            resolve({data:'200'});
+          }
+        });
+      }
+    });
+  });
+  return promise;
 }
 
 function composeUp(){
   console.log("Starting up docker containers ... ");
   logger.log("info", "Starting up docker containers");
+  shell.config.silent = false;
   shell.exec('docker-compose up -d', function(code, stdout, stderr) {
     console.log(stdout);
     logger.log("info", "docker-compose up -d\n" + stdout);
@@ -415,6 +536,18 @@ function composePull(){
 function composePush(){
   console.log("Pushing images to docker registry ... ");
   logger.log("info", "Pushing images to docker registry");
+  // Build and push
+  //shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + imageTag, confFile);
+  //console.log("Building docker image for " + imageTag + " ... ");
+  //logger.log("info", "Bilding docker images");
+  //shell.exec("docker build -t " + imageTag + " .", function(code, stdout, stderr) {
+  //  console.log(stdout);
+  //  logger.log("info", "docker build -t " + imageTag + " .\n" + stdout);
+  //  if (code !== 0) {
+  //    logger.log('Error', "Code: " + code + ", msg: " + stderr);
+  //    console.log('Error', "Code: " + code + ", msg: " + stderr);
+  //  }
+  //});
   shell.exec("docker-compose push", function(code, stdout, stderr) {
     console.log(stdout);
     logger.log("info", "docker-compose push\n" + stdout);
@@ -496,31 +629,17 @@ function composeLogs(log){
   }
 }
 
-function composeGet(repo){
-  if (repo == true){
-    console.log("Usage: dragon get <Site|Api|Store|Proxy|Certs|Chain>\n" +
-      "Example: dragon get Site");
-  } else {
-  shell.exec("git clone https://github.com/DragonSystems/Dragon" + repo + ".git ", function(code, stdout, stderr) {
-    console.log(stdout);
-    if (code !== 0) {
-          logger.log('Error', "Code: " + code + ", msg: " + stderr);
-          console.log('Error', "Code: " + code + ", msg: " + stderr);
-      }
-  });
-  }
-}
-
 function dragonInit(){
-  shell.cd(homeDir);
-  shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
-  shell.cp(path.join(__dirname, ".env"), confFile);
-  shell.cp(path.join(__dirname, "docker-compose.yaml"), path.join(homeDir, "docker-compose.yaml"));
-  getInterface()
-    .then(validateDocker)
+  //shell.cd(homeDir);
+  //shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
+  //shell.cp(path.join(__dirname, ".env"), confFile);
+  //shell.cp(path.join(__dirname, "docker-compose.yaml"), composeFile);
+  validateDocker()
     .then(loadEnv)
     .then(loadPlatform)
-    .then(getUserInputs);
+    .then(getInterface)
+    .then(getUserInputs)
+    .then(getSource);
 }
 
 function validateConfigs(){
@@ -537,7 +656,7 @@ if (process.argv.length == 2) {
       setTimeout(function(){
         console.log("Usage: " + chalk.red("dragon [option]"));
         console.log("       " + chalk.red("dragon --help") + "\t to view available options\n");
-      resolve({data:'200'});
+        resolve({data:'200'});
       }, 200);
     });
     return promise;
@@ -555,20 +674,16 @@ if (cmd.start) {
 }
 
 if (cmd.init) {
-  shell.cd(homeDir);
   dragonInit();
 }
 
 if (cmd.server) {
-  if (validateConfigs()){
-    shell.cd(homeDir);
-    //composePullAndRun();
-    getInterface()
-      .then(validateDocker)
-      .then(loadEnv)
-      .then(loadPlatform)
-      .then(getUserInputs);
-  }
+  validateDocker()
+    .then(loadEnv)
+    .then(loadPlatform)
+    .then(getInterface)
+    .then(getUserInputs)
+    .then(getServerInputs);
 }
 
 if (cmd.ps) {
@@ -580,7 +695,9 @@ if (cmd.ps) {
 
 if (cmd.build) {
   if (validateConfigs()){
-    composeBuild();
+    loadEnv()
+      .then(loadPlatform)
+      .then(sourceBuild);
   }
 }
 
@@ -612,16 +729,14 @@ if (cmd.logs) {
   }
 }
 
-if (cmd.get) {
-  if (validateConfigs()){
-    composeGet(cmd.get);
-  }
-}
-
 if (cmd.push) {
   if (validateConfigs()){
-    shell.cd(homeDir);
-    composePush();
+    getInterface()
+      .then(getRegistryHome)
+      .then(loadEnv)
+      .then(loadPlatform)
+      .then(dockerBuild)
+      .then(dockerPush);
   }
 }
 
