@@ -77,6 +77,11 @@ DragonAPI  DragonSite
 
 `dragon build`
 
+```
+Building DragonSite code base
+npm info it worked if it ends with ok 
+```
+
 **Note**:- This will take sometime and you will feels like its hanged. But give some time since its building the source.
 
 
@@ -173,10 +178,11 @@ Update the code in the `dragon-workplace`. If there is *a setup running make sur
 `dragon build`
 
 ```
-? Build component Site
-? Image tag name:  docker.io/username/customname:0.0.1-rc1
-Building code for Site ... 
+Building DragonSite code base
+npm info it worked if it ends with ok 
 ```
+
+**Note**:- This will take sometime and you will feels like its hanged. But give some time since its building the source.
 
 #### Start the service.
 
@@ -197,16 +203,15 @@ Save and exit using '<Esc> :wq'
 
 > Make sure you login to docker registry from the command-line before you run this command if you are using an authenticated registry like [docker hub](https://docs.docker.com/docker-cloud/builds/push-images/).
 
-
 `dragon push`
 
 ```
-         _                                             _                     
-      __| |_ __ __ _  __ _  ___  _ __    ___ _   _ ___| |_ ___ _ __ ___      
-     / _` | '__/ _` |/ _` |/ _ \| '_ \  / __| | | / __| __/ _ \ '_ ` _ \     
-    | (_| | | | (_| | (_| | (_) | | | | \__ \ |_| \__ \ ||  __/ | | | | |    
-     \__,_|_|  \__,_|\__, |\___/|_| |_| |___/\__, |___/\__\___|_| |_| |_|    
-                     |___/                   |___/                           
+         _                                             _
+      __| |_ __ __ _  __ _  ___  _ __    ___ _   _ ___| |_ ___ _ __ ___
+     / _` | '__/ _` |/ _` |/ _ \| '_ \  / __| | | / __| __/ _ \ '_ ` _ \
+    | (_| | | | (_| | (_| | (_) | | | | \__ \ |_| \__ \ ||  __/ | | | | |
+     \__,_|_|  \__,_|\__, |\___/|_| |_| |___/\__, |___/\__\___|_| |_| |_|
+                     |___/                   |___/
                                                                    v0.01
 ? Docker registry home: docker.io/thilina
 Building DragonSite custom docker image ...
