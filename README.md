@@ -4,7 +4,7 @@ The Dragon System is a production class development framework and API for Ethere
 
 At the moment dragon-system will only work on Mac OSX and Linux. 
 
-### Install dependencies
+## Install dependencies
 
 - nodejs
 
@@ -28,17 +28,17 @@ At the moment dragon-system will only work on Mac OSX and Linux.
    
 **Note**:- Make sure you can run `git`, `docker ps`, `docker-compose` without any issue and without sudo command.
 
-### Install dragon-system
+## Install dragon-system
 
 `sudo npm install -g dragon-system`
 
-### Run a test setup
+## Run a test setup
 
-Create a workplace (you can use any name for the directory) where you clone the DragonSite and DragonAPI.
+#### Create a workplace
 
 `mkdir dragon-workspace`
 
-Change the directory to that directory
+You can use any name for the directory. It will use as the directory to clone the DragonSite and DragonAPI.Change the directory to that directory;
 
 `cd dragon-workspace`
 
@@ -48,12 +48,13 @@ Change the directory to that directory
 
 `dragon init`
 
-```         _                                             _                     
-      __| |_ __ __ _  __ _  ___  _ __    ___ _   _ ___| |_ ___ _ __ ___      
-     / _` | '__/ _` |/ _` |/ _ \| '_ \  / __| | | / __| __/ _ \ '_ ` _ \     
-    | (_| | | | (_| | (_| | (_) | | | | \__ \ |_| \__ \ ||  __/ | | | | |    
-     \__,_|_|  \__,_|\__, |\___/|_| |_| |___/\__, |___/\__\___|_| |_| |_|    
-                     |___/                   |___/                           
+```
+         _                                             _
+      __| |_ __ __ _  __ _  ___  _ __    ___ _   _ ___| |_ ___ _ __ ___
+     / _` | '__/ _` |/ _` |/ _ \| '_ \  / __| | | / __| __/ _ \ '_ ` _ \
+    | (_| | | | (_| | (_| | (_) | | | | \__ \ |_| \__ \ ||  __/ | | | | |
+     \__,_|_|  \__,_|\__, |\___/|_| |_| |___/\__, |___/\__\___|_| |_| |_|
+                     |___/                   |___/
                                                                    v0.01
 ? Site domain name: www.drageth.com
 ? API domain name: sws.drageth.com
@@ -68,7 +69,7 @@ After running the `dragon init` you can see the cloned site and api repos in the
 
 `ls`
 
-```[localhost dragon-workplace]$ ls
+```
 DragonAPI  DragonSite
 ```
 
@@ -89,7 +90,8 @@ DragonAPI  DragonSite
 
 `dragon start`
 
-```Starting up docker containers ... 
+```
+Starting up docker containers ... 
 
 Update /etc/hosts entries to verify the setup.
 $ sudo vim /etc/hosts
@@ -103,13 +105,14 @@ Save and exit using '<Esc> :wq'
 
 `dragon ps`
 
-```     Name               Command         State            Ports                                  
+```
+Name               Command         State            Ports
 ----------------------------------------------------------------------
-dragon_certs_1    /bin/sh -c /startup   Up      80/tcp                                                                 
+dragon_certs_1    /bin/sh -c /startup   Up      80/tcp
 dragon_chain_1    /parity/parity        Up      0.0.0.0:8080->8080/tcp
-dragon_proxy_1    /bin/sh -c /startup   Up      0.0.0.0:443->443/tcp, 
-dragon_site_1     node server.js        Up      8080/tcp                                                               
-dragon_api_1      node socket.js        Up      8011/tcp                                                               
+dragon_proxy_1    /bin/sh -c /startup   Up      0.0.0.0:443->443/tcp,
+dragon_site_1     node server.js        Up      8080/tcp
+dragon_api_1      node socket.js        Up      8011/tcp
 dragon_store_1    /bin/sh -c /startup   Up      4001/tcp, 5001/tcp, 90
 ```
 
@@ -121,7 +124,8 @@ dragon_store_1    /bin/sh -c /startup   Up      4001/tcp, 5001/tcp, 90
 
 `dragon logs certs`
 
-```Attaching to dragon_certs_1
+```
+Attaching to dragon_certs_1
 certs_1   | Reading environment variables ...
 certs_1   | SITE_HOSTNAME=www.drageth.com
 certs_1   | API_HOSTNAME=sws.drageth.com
@@ -148,7 +152,7 @@ certs_1   | Cron is running - Thu Sep 14 14:46:01 UTC 2017
 
 `dragon rm`
 
-### Build your own site
+## Build your own site
 
 First of all run a test setup, it will validate the environment and install basic images for you.
 
@@ -168,7 +172,7 @@ Update the code in the `dragon-workplace`. If there is *a setup running make sur
 
 `dragon build`
 
-```[localhost DragonSite]$ dragon build
+```
 ? Build component Site
 ? Image tag name:  docker.io/username/customname:0.0.1-rc1
 Building code for Site ... 
@@ -176,10 +180,10 @@ Building code for Site ...
 
 #### Start the service.
 
-
 `dragon start`
 
-```Starting up docker containers ... 
+```
+Starting up docker containers ... 
 
 Update /etc/hosts entries to verify the setup.
 $ sudo vim /etc/hosts
@@ -189,13 +193,86 @@ Add following lines to the file
 Save and exit using '<Esc> :wq'
 ```
 
-TODO: Build docker images with new changes.
+## Push customized images to a docker registory
 
-### Clean the environment
+> Make sure you login to docker registry from the command-line before you run this command if you are using an authenticated registry like [docker hub](https://docs.docker.com/docker-cloud/builds/push-images/).
+
+
+`dragon push`
+
+```
+         _                                             _                     
+      __| |_ __ __ _  __ _  ___  _ __    ___ _   _ ___| |_ ___ _ __ ___      
+     / _` | '__/ _` |/ _` |/ _ \| '_ \  / __| | | / __| __/ _ \ '_ ` _ \     
+    | (_| | | | (_| | (_| | (_) | | | | \__ \ |_| \__ \ ||  __/ | | | | |    
+     \__,_|_|  \__,_|\__, |\___/|_| |_| |___/\__, |___/\__\___|_| |_| |_|    
+                     |___/                   |___/                           
+                                                                   v0.01
+? Docker registry home: docker.io/thilina
+Building DragonSite custom docker image ...
+```
+
+**Note**:- This process is also take some time. Usually those images will be aroung 900Mb each in size.
+
+## Run the customized system in a server environment
+
+You have to follow some steps as in the dev setup but there are few additional steps too. 
+
+#### Create a workplace and move to that directory
+
+`mkdir dragon-workspace`
+
+`cd dragon-workspace`
+
+**Again whenever you run `dragon` commands, make sure you run it within this directory**.
+
+#### Initialize the system for a server
+
+`dragon server`
+
+```
+         _                                             _
+      __| |_ __ __ _  __ _  ___  _ __    ___ _   _ ___| |_ ___ _ __ ___
+     / _` | '__/ _` |/ _` |/ _ \| '_ \  / __| | | / __| __/ _ \ '_ ` _ \
+    | (_| | | | (_| | (_| | (_) | | | | \__ \ |_| \__ \ ||  __/ | | | | |
+     \__,_|_|  \__,_|\__, |\___/|_| |_| |___/\__, |___/\__\___|_| |_| |_|
+                     |___/                   |___/
+                                                                   v0.01
+? Site domain name: www.drageth.com
+? API domain name: sws.drageth.com
+? NS1 API key: UGCllAT1oVxupUlWIOOX
+? Debug mode enabled or disabled? Disable
+? Continue on installation? Yes
+? dragon-site image tag:  docker.io/thilina/dragonsite:201709281024
+? dragon-api image tag:  docker.io/thilina/dragonapi:201709281024
+```
+
+#### Start the service.
+
+`dragon start`
+
+```
+Starting up docker containers ... 
+
+Update /etc/hosts entries to verify the setup.
+$ sudo vim /etc/hosts
+Add following lines to the file
+127.0.0.1 www.drageth.com
+127.0.0.1 sws.drageth.com
+Save and exit using '<Esc> :wq'
+```
+
+**Note**:- Ignore the `/etc/hosts` entries and update your DNS entries to point to the server. And make sure you have allowed firewalls to access port 80 of the server.
+
+You can use other commands like `dragon stop`, `dragon logs <site/api...>`, etc to interact with the system.
+
+## Clean the environment
 
 You can follow below steps to clean your environment.
 
 - `sudo npm uninstall -g dragon-system`
+
+- `rm -rf <your workplace>`
 
 - `sudo rm -rf $USER/.dragon`
 
