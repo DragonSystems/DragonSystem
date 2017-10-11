@@ -182,6 +182,16 @@ Save and exit using '<Esc> :wq'
 
 Ignore the hosts update and add DNS entries to point to the running server.
 
+#### Update NS1 DNS entries.
+
+`dragon dns`
+
+```
+Searching for the zone of: www.drageth.com
+Searching for the zone of: sws.drageth.com
+Update recode of: www.drageth.com
+Update recode of: sws.drageth.com
+```
 
 ### Clean the environment
 
