@@ -13,6 +13,7 @@ var ProgressBar = require('progress');
 var logger = require('winston');
 var properties = require ("properties");
 var datetime = require('node-datetime');
+var superagent = require('superagent');
 
 shell.config.silent = true;
 var homeDir = path.join(os.homedir(), ".dragon");
@@ -30,6 +31,8 @@ var logfile = path.join(homeDir, "dragon.log");
 var confFile = path.join(homeDir, ".env");
 var platformFile = path.join(homeDir, "platform.env");
 var composeFile = path.join(homeDir, "docker-compose.yaml");
+var ns1_base_url = "https://api.nsone.net/v1";
+
 
 shell.mkdir('-p', homeDir);
 
@@ -41,6 +44,7 @@ cmd.option('ps', 'Show running status')
   .option('start', 'Start dragon system. (For servers use server option)')
   .option('server', 'Initialize dragon system in a server environment')
   .option('build', 'Build custom docker images')
+  .option('dns', 'Update DNS entries to Site and API domain names')
   .option('logs [name]', 'Get docker logs',  /^(site|api|store|proxy|certs|parity)$/i)
   .option('stop', 'Stop all running dockers')
   .option('kill', 'Forcefully stop all running dockers')
@@ -629,6 +633,100 @@ function composeLogs(log){
   }
 }
 
+var getZone = function(domain){
+  var promise = new Promise(function(resolve, reject){
+    console.log("Searching for the zone of: " + domain);
+    search_url = ns1_base_url + '/search?q=_acme-challenge.' + domain
+    superagent.get(search_url)
+    .set('X-NSONE-Key', apiKey)
+    .set('X-NSONE-Js-Api', "0.1.11")
+    .end((err, res) => {
+      if (err) { reject(err); }
+      if (res.body[0] != undefined){
+        if (res.body[0].zone != null);
+          resolve(res.body[0].zone);
+      } else {
+        reject("No acme challenge for the domain: " + domain);
+      }
+    });
+  });
+  return promise;
+}
+
+var checkRecode = function(zone, domain){
+  var promise = new Promise(function(resolve, reject){
+    recode_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
+    superagent.get(recode_url)
+    .set('X-NSONE-Key', apiKey)
+    .set('X-NSONE-Js-Api', "0.1.11")
+    .end((err, res) => {
+      if (err) { return reject(zone); }
+      resolve(zone);
+    });
+  });
+  return promise;
+}
+
+var addRecode = function(zone, domain, ip_addr){
+  var promise = new Promise(function(resolve, reject){
+    recode_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
+    recode_data = '{"zone":"' + zone + '", "domain":"' + domain + '", "type":"A", "answers":[{"answer": ["' + ip_addr + '"]}]}'
+    superagent.put(recode_url)
+    .send(recode_data)
+    .set('X-NSONE-Key', apiKey)
+    .set('X-NSONE-Js-Api', "0.1.11")
+    .end((err, res) => {
+      if (err) { return reject(zone); }
+      console.log("Add new recode of: " + domain);
+      resolve(zone);
+    });
+  });
+  return promise;
+}
+
+var updateRecode = function(zone, domain, ip_addr){
+  var promise = new Promise(function(resolve, reject){
+    recode_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
+    recode_data = '{"zone":"' + zone + '", "domain":"' + domain + '", "type":"A", "answers":[{"answer": ["' + ip_addr + '"]}]}'
+    superagent.post(recode_url)
+    .send(recode_data)
+    .set('X-NSONE-Key', apiKey)
+    .set('X-NSONE-Js-Api', "0.1.11")
+    .end((err, res) => {
+      if (err) { return reject(zone) }
+      console.log("Update recode of: " + domain);
+      resolve(zone);
+    });
+  });
+  return promise;
+}
+
+var publicIP = function(){
+  var promise = new Promise(function(resolve, reject){
+    superagent.get("https://api.ipify.org	")
+    .end((err, res) => {
+      if (err) {
+        reject('127.0.0.1');
+      } else {
+        resolve(res.text);
+      }
+    });
+  });
+  return promise;
+}
+
+var updateDNS = function(domain){
+  var promise = new Promise(function(resolve, reject){
+    Promise.all([getZone(domain), publicIP()])
+    .then(values => {
+      checkRecode(values[0], domain)
+      .then(zone => updateRecode(values[0], domain, values[1]))
+      .catch(zone => addRecode(values[0], domain, values[1]))
+    });
+  });
+  return promise;
+}
+
 function dragonInit(){
   //shell.cd(homeDir);
   //shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
@@ -665,6 +763,18 @@ if (process.argv.length == 2) {
   loadEnv()
     .then(loadPlatform);
 }
+
+if (cmd.dns) {
+  if (validateConfigs()){
+  loadEnv()
+    .then(loadPlatform)
+    .then(values => {
+      updateDNS(site)
+      .then(updateDNS(api));
+    });
+  }
+}
+
 
 if (cmd.start) {
   if (validateConfigs()){
