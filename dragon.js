@@ -51,7 +51,7 @@ cmd.option('ps', 'Show running status')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
   .option('pull', 'Pull all docker images from a docker registries')
-  .version('0.0.1-rc.11', '-v, --version', 'Output the version number')
+  .version('0.0.1-rc.12', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
 var getInterface = function() {
@@ -344,7 +344,6 @@ function updateConfigFiles(){
   //shell.cd(homeDir);
   shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
   shell.cp(path.join(__dirname, ".env"), confFile);
-  shell.cp(path.join(__dirname, "docker-compose.yaml"), composeFile);
   shell.sed('-i', 'DEBUG=.*', "DEBUG=" + debug, platformFile);
   shell.sed('-i', 'SITE_HOSTNAME=.*', "SITE_HOSTNAME=" + site, platformFile);
   shell.sed('-i', 'API_HOSTNAME=.*', "API_HOSTNAME=" + api, platformFile);
@@ -636,7 +635,7 @@ function composeLogs(log){
 var getZone = function(domain){
   var promise = new Promise(function(resolve, reject){
     console.log("Searching for the zone of: " + domain);
-    search_url = ns1_base_url + '/search?q=_acme-challenge.' + domain
+    search_url = ns1_base_url + '/search?q=' + domain
     superagent.get(search_url)
     .set('X-NSONE-Key', apiKey)
     .set('X-NSONE-Js-Api', "0.1.11")
@@ -646,7 +645,7 @@ var getZone = function(domain){
         if (res.body[0].zone != null);
           resolve(res.body[0].zone);
       } else {
-        reject("No acme challenge for the domain: " + domain);
+        reject("No DNS recode for domain: " + domain);
       }
     });
   });
