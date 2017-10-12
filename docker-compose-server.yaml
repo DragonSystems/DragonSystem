@@ -13,8 +13,6 @@ services:
       - platform.env
     depends_on:
       - certs
-    volumes:
-      - ${WORKSPACE}/DragonSite:/root
 
   store:
     image: "${STORE_IMAGE}"
@@ -47,10 +45,6 @@ services:
     links:
       - store
       - chain
-    volumes:
-      - ${WORKSPACE}/DragonAPI:/root
-    command:
-      - 'socket.js'
 
   proxy:
     image: "${PROXY_IMAGE}"
