@@ -51,7 +51,7 @@ cmd.option('ps', 'Show running status')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
   .option('pull', 'Pull all docker images from a docker registries')
-  .version('0.0.1-rc.9', '-v, --version', 'Output the version number')
+  .version('0.0.1-rc.10', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
 var getInterface = function() {
@@ -740,6 +740,19 @@ function dragonInit(){
     .then(getSource);
 }
 
+function serverInit(){
+  //shell.cd(homeDir);
+  shell.cp(path.join(__dirname, "platform.env.example"), platformFile);
+  shell.cp(path.join(__dirname, ".env"), confFile);
+  shell.cp(path.join(__dirname, "docker-compose.yaml"), composeFile);
+  validateDocker()
+    .then(loadEnv)
+    .then(loadPlatform)
+    .then(getInterface)
+    .then(getUserInputs)
+    .then(getServerInputs);
+}
+
 function validateConfigs(){
   if (shell.test('-f', confFile)) {
     return true;
@@ -788,12 +801,7 @@ if (cmd.init) {
 }
 
 if (cmd.server) {
-  validateDocker()
-    .then(loadEnv)
-    .then(loadPlatform)
-    .then(getInterface)
-    .then(getUserInputs)
-    .then(getServerInputs);
+  serverInit();
 }
 
 if (cmd.ps) {
