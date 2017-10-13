@@ -51,7 +51,7 @@ cmd.option('ps', 'Show running status')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
   .option('pull', 'Pull all docker images from a docker registries')
-  .version('0.0.1-rc.12', '-v, --version', 'Output the version number')
+  .version('0.0.1-rc.13', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
 var getInterface = function() {
@@ -483,12 +483,15 @@ function composeUp(){
       logger.log('Error', "Code: " + code + ", msg: " + stderr);
       console.log('Error', "Code: " + code + ", msg: " + stderr);
     } else {
-      console.log(chalk.blue("Update /etc/hosts entries to verify the setup."));
+      console.log(chalk.blue("For development setups update /etc/hosts entries for testing."));
       console.log(chalk.underline.bgMagenta(chalk.white("$ sudo vim /etc/hosts")));
       console.log(chalk.blue("Add following lines to the file"));
       console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + site)));
       console.log(chalk.underline.bgBlue(chalk.white("127.0.0.1 " + api)));
       console.log(chalk.blue("Save and exit using \'<Esc> :wq\'"));
+      console.log();
+      console.log(chalk.blue("For production setups run following command to update NS1 DNS records"));
+      console.log(chalk.underline.bgMagenta(chalk.white("dragon dns")));
     }
   });
 }
@@ -645,17 +648,17 @@ var getZone = function(domain){
         if (res.body[0].zone != null);
           resolve(res.body[0].zone);
       } else {
-        reject("No DNS recode for domain: " + domain);
+        reject("No DNS record for domain: " + domain);
       }
     });
   });
   return promise;
 }
 
-var checkRecode = function(zone, domain){
+var checkrecord = function(zone, domain){
   var promise = new Promise(function(resolve, reject){
-    recode_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
-    superagent.get(recode_url)
+    record_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
+    superagent.get(record_url)
     .set('X-NSONE-Key', apiKey)
     .set('X-NSONE-Js-Api', "0.1.11")
     .end((err, res) => {
@@ -666,34 +669,34 @@ var checkRecode = function(zone, domain){
   return promise;
 }
 
-var addRecode = function(zone, domain, ip_addr){
+var addrecord = function(zone, domain, ip_addr){
   var promise = new Promise(function(resolve, reject){
-    recode_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
-    recode_data = '{"zone":"' + zone + '", "domain":"' + domain + '", "type":"A", "answers":[{"answer": ["' + ip_addr + '"]}]}'
-    superagent.put(recode_url)
-    .send(recode_data)
+    record_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
+    record_data = '{"zone":"' + zone + '", "domain":"' + domain + '", "type":"A", "answers":[{"answer": ["' + ip_addr + '"]}]}'
+    superagent.put(record_url)
+    .send(record_data)
     .set('X-NSONE-Key', apiKey)
     .set('X-NSONE-Js-Api', "0.1.11")
     .end((err, res) => {
       if (err) { return reject(zone); }
-      console.log("Add new recode of: " + domain);
+      console.log("Add new record of: " + domain);
       resolve(zone);
     });
   });
   return promise;
 }
 
-var updateRecode = function(zone, domain, ip_addr){
+var updaterecord = function(zone, domain, ip_addr){
   var promise = new Promise(function(resolve, reject){
-    recode_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
-    recode_data = '{"zone":"' + zone + '", "domain":"' + domain + '", "type":"A", "answers":[{"answer": ["' + ip_addr + '"]}]}'
-    superagent.post(recode_url)
-    .send(recode_data)
+    record_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
+    record_data = '{"zone":"' + zone + '", "domain":"' + domain + '", "type":"A", "answers":[{"answer": ["' + ip_addr + '"]}]}'
+    superagent.post(record_url)
+    .send(record_data)
     .set('X-NSONE-Key', apiKey)
     .set('X-NSONE-Js-Api', "0.1.11")
     .end((err, res) => {
       if (err) { return reject(zone) }
-      console.log("Update recode of: " + domain);
+      console.log("Update record of: " + domain);
       resolve(zone);
     });
   });
@@ -718,9 +721,9 @@ var updateDNS = function(domain){
   var promise = new Promise(function(resolve, reject){
     Promise.all([getZone(domain), publicIP()])
     .then(values => {
-      checkRecode(values[0], domain)
-      .then(zone => updateRecode(values[0], domain, values[1]))
-      .catch(zone => addRecode(values[0], domain, values[1]))
+      checkrecord(values[0], domain)
+      .then(zone => updaterecord(values[0], domain, values[1]))
+      .catch(zone => addrecord(values[0], domain, values[1]))
     });
   });
   return promise;
