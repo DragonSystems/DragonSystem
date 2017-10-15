@@ -34,7 +34,7 @@ services:
       - ~/.dragon/parity/:/root/.local/share/io.parity.ethereum/
     env_file:
       - platform.env
-    command: ["--pruning fast", "--ws-interface", "all", "--ws-origins", "all", "--ws-hosts", "all", "--jsonrpc-hosts", "all", "--ui-interface", "0.0.0.0", "--ui-hosts", "all", "--ui-no-validation"]
+    command: ["--ws-interface", "all", "--ws-origins", "all", "--ws-hosts", "all", "--jsonrpc-hosts", "all", "--ui-interface", "0.0.0.0", "--ui-hosts", "all", "--ui-no-validation"]
 
   api:
     image: "${API_IMAGE}"

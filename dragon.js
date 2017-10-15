@@ -51,12 +51,11 @@ cmd.option('ps', 'Show running status')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
   .option('pull', 'Pull all docker images from a docker registries')
-  .version('0.0.1-rc.14', '-v, --version', 'Output the version number')
+  .version('0.0.1-rc.15', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
 var getInterface = function() {
   var promise = new Promise(function(resolve, reject){
-    setTimeout(function(){
       figlet.text('    dragon system    ', {
         font: 'Ogre',
         horizontalLayout: 'default',
@@ -71,14 +70,12 @@ var getInterface = function() {
         console.log(chalk.hex('#C8C420')('                                                                   v0.01'));
         resolve({data:'200'});
       });
-    }, 200);
   });
   return promise;
 }
 
 var validateDocker= function() {
   var promise = new Promise(function(resolve, reject){
-    setTimeout(function(){
       shell.exec('docker -v', function(code, stdout, stderr) {
         if (code !== 0) {
           logger.log('Error', "docker command not found,\nmsg: " + code + ", " + stderr);
@@ -112,14 +109,12 @@ var validateDocker= function() {
           });
         }
       });
-    }, 200);
   });
   return promise;
 }
 
 var getSource = function() {
   var promise = new Promise(function(resolve, reject){
-    setTimeout(function(){
       console.log("Cloning DragonSite ...")
       shell.exec("git clone https://github.com/DragonSystems/DragonSite.git ", function(code, stdout, stderr) {
         if (code !== 0) {
@@ -138,14 +133,12 @@ var getSource = function() {
             });
           }
       });
-    }, 5000);
   });
   return promise;
 }
 
 var loadEnv = function() {
   var promise = new Promise(function(resolve, reject){
-    setTimeout(function(){
       if (shell.test('-f', confFile)) {
         properties.parse(confFile, {path: true}, function (error, data){
           workspace = data.WORKSPACE;
@@ -157,14 +150,12 @@ var loadEnv = function() {
           resolve({data:'200'});
         });
       }
-    }, 200);
   });
   return promise;
 }
 
 var loadPlatform = function() {
   var promise = new Promise(function(resolve, reject){
-    setTimeout(function(){
       if (shell.test('-f', platformFile)) {
         properties.parse(platformFile, {path: true}, function (error, data){
           debug = data.DEBUG;
@@ -174,14 +165,12 @@ var loadPlatform = function() {
           resolve({data:'200'});
         });
       }
-    }, 200);
   });
   return promise;
 }
 
 var getServerInputs = function() {
   var promise = new Promise(function(resolve, reject){
-    setTimeout(function(){
       inquirer.prompt([
       {
         type: 'input',
@@ -202,14 +191,12 @@ var getServerInputs = function() {
         shell.sed('-i', 'API_IMAGE=.*', "API_IMAGE=" + apiImage, confFile);
         resolve({data:'200'});
       });
-    }, 2000);
   });
   return promise;
 }
 
 var getUserInputs = function() {
   var promise = new Promise(function(resolve, reject){
-    setTimeout(function(){
       inquirer.prompt([
       {
         type: 'input',
@@ -295,7 +282,6 @@ var getUserInputs = function() {
         validateUserInputs(answers);
         resolve({data:'200'});
       });
-    }, 2000);
   });
   return promise;
 }
@@ -357,7 +343,6 @@ function updateConfigFiles(){
 
 var getRegistryHome = function() {
   var promise = new Promise(function(resolve, reject){
-    setTimeout(function(){
       inquirer.prompt([
       {
         type: 'input',
@@ -373,7 +358,6 @@ var getRegistryHome = function() {
         shell.sed('-i', 'SITE_IMAGE=.*', "SITE_IMAGE=" + siteImage, confFile);
         resolve({data:'200'});
       });
-    }, 200);
   });
   return promise;
 }
@@ -768,11 +752,9 @@ function validateConfigs(){
 if (process.argv.length == 2) {
   getInterface().then(function() {
     var promise = new Promise(function(resolve, reject){
-      setTimeout(function(){
         console.log("Usage: " + chalk.red("dragon [option]"));
         console.log("       " + chalk.red("dragon --help") + "\t to view available options\n");
         resolve({data:'200'});
-      }, 200);
     });
     return promise;
   });
