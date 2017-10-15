@@ -51,7 +51,7 @@ cmd.option('ps', 'Show running status')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
   .option('pull', 'Pull all docker images from a docker registries')
-  .version('0.0.1-rc.15', '-v, --version', 'Output the version number')
+  .version('0.0.1-rc.16', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
 var getInterface = function() {
@@ -279,50 +279,77 @@ var getUserInputs = function() {
         ]
       }
       ]).then(function (answers) {
-        validateUserInputs(answers);
-        resolve({data:'200'});
+        //validateUserInputs(answers);
+        site = answers.siteHostname;
+        api = answers.apiHostname;
+        apiKey = answers.apiKey;
+        debug = answers.debug;
+        inquirer.prompt([
+        {
+          type: 'list',
+          message: 'Continue on installation?',
+          name: 'install',
+          choices: [
+            {
+                name: 'No'
+            },
+            {
+                name: 'Yes'
+            }
+          ]
+        }
+        ]).then(function (inputs) {
+          if(inputs.install == 'Yes'){
+            //console.log("Starting install ...");
+            logger.log("info", "Starting install");
+            updateConfigFiles();
+            resolve({data:'200'});
+          } else {
+            process.exit(0);
+          }
+        });
       });
   });
   return promise;
 }
 
-function validateUserInputs(answers) {
-
-  site = answers.siteHostname;
-  api = answers.apiHostname;
-  apiKey = answers.apiKey;
-  debug = answers.debug;
-
-  //siteImage = answers.siteImage;
-  //storeImage = answers.storeImage;
-  //certsImage = answers.certsImage;
-  //proxyImage = answers.proxyImage;
-  //apiImage = answers.apiImage;
-
-  inquirer.prompt([
-  {
-    type: 'list',
-    message: 'Continue on installation?',
-    name: 'install',
-    choices: [
-      {
-          name: 'No'
-      },
-      {
-          name: 'Yes'
-      }
-    ]
-  }
-  ]).then(function (answers) {
-    if(answers.install == 'Yes'){
-      //console.log("Starting install ...");
-      logger.log("info", "Starting install");
-      updateConfigFiles();
-    } else {
-      process.exit(0);
-    }
-  });
-}
+//function validateUserInputs(answers) {
+//
+//  site = answers.siteHostname;
+//  api = answers.apiHostname;
+//  apiKey = answers.apiKey;
+//  debug = answers.debug;
+//
+//  //siteImage = answers.siteImage;
+//  //storeImage = answers.storeImage;
+//  //certsImage = answers.certsImage;
+//  //proxyImage = answers.proxyImage;
+//  //apiImage = answers.apiImage;
+//
+//  inquirer.prompt([
+//  {
+//    type: 'list',
+//    message: 'Continue on installation?',
+//    name: 'install',
+//    choices: [
+//      {
+//          name: 'No'
+//      },
+//      {
+//          name: 'Yes'
+//      }
+//    ]
+//  }
+//  ]).then(function (answers) {
+//    if(answers.install == 'Yes'){
+//      //console.log("Starting install ...");
+//      logger.log("info", "Starting install");
+//      updateConfigFiles();
+//    } else {
+//      process.exit(0);
+//    }
+//  });
+//}
 
 function updateConfigFiles(){
   //console.log("Updating configurations ... ");
