@@ -2,6 +2,7 @@ version: "3.0"
 services:
   certs: 
     image: "${CERTS_IMAGE}"
+    restart: always
     env_file:
       - platform.env
     volumes:
@@ -9,6 +10,7 @@ services:
 
   site:
     image: "${SITE_IMAGE}"
+    restart: always
     env_file:
       - platform.env
     depends_on:
@@ -16,6 +18,7 @@ services:
 
   store:
     image: "${STORE_IMAGE}"
+    restart: always
     env_file:
       - platform.env
     depends_on:
@@ -23,6 +26,7 @@ services:
 
   chain:
     image: "${CHAIN_IMAGE}"
+    restart: always
     ports:
       - "8080:8080"
       - "8180:8180"
@@ -32,10 +36,11 @@ services:
       - ~/.dragon/parity/:/root/.local/share/io.parity.ethereum/
     env_file:
       - platform.env
-    command: ["--ws-interface", "all", "--ws-origins", "all", "--ws-hosts", "all", "--jsonrpc-hosts", "all", "--ui-interface", "0.0.0.0", "--ui-hosts", "all", "--ui-no-validation"]
+    command: ["--ws-interface", "all","--pruning", "fast", "--ws-origins", "all", "--ws-hosts", "all", "--jsonrpc-hosts", "all", "--ui-interface", "0.0.0.0", "--ui-hosts", "all", "--ui-no-validation"]
 
   api:
     image: "${API_IMAGE}"
+    restart: always
     env_file:
       - platform.env
     depends_on:
@@ -48,6 +53,7 @@ services:
 
   proxy:
     image: "${PROXY_IMAGE}"
+    restart: always
     env_file:
       - platform.env
     volumes:
