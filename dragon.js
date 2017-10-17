@@ -51,7 +51,7 @@ cmd.option('ps', 'Show running status')
   .option('rm', 'Clear all stopped docker containers')
   .option('push', 'Push build docker images to a docker registry')
   .option('pull', 'Pull all docker images from a docker registries')
-  .version('0.0.1-rc.16', '-v, --version', 'Output the version number')
+  .version('0.0.1-rc.17', '-v, --version', 'Output the version number')
   .parse(process.argv);
 
 var getInterface = function() {
@@ -659,7 +659,7 @@ var getZone = function(domain){
         if (res.body[0].zone != null);
           resolve(res.body[0].zone);
       } else {
-        reject("No DNS record for domain: " + domain);
+        reject("No DNS zone for the domain: " + domain);
       }
     });
   });
@@ -673,53 +673,22 @@ var checkrecord = function(zone, domain){
     .set('X-NSONE-Key', apiKey)
     .set('X-NSONE-Js-Api', "0.1.11")
     .end((err, res) => {
-      if (err) { return reject(zone); }
+      if (err) {
+        console.log("No A record found for: " + domain);
+        return reject(zone);
+      }
       resolve(zone);
     });
   });
   return promise;
 }
 
-var addrecord = function(zone, domain, ip_addr){
+var getLatlong = function(ip_addr){
   var promise = new Promise(function(resolve, reject){
-    record_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
-    record_data = '{"zone":"' + zone + '", "domain":"' + domain + '", "type":"A", "answers":[{"answer": ["' + ip_addr + '"]}]}'
-    superagent.put(record_url)
-    .send(record_data)
-    .set('X-NSONE-Key', apiKey)
-    .set('X-NSONE-Js-Api', "0.1.11")
-    .end((err, res) => {
-      if (err) { return reject(zone); }
-      console.log("Add new record of: " + domain);
-      resolve(zone);
-    });
-  });
-  return promise;
-}
-
-var updaterecord = function(zone, domain, ip_addr){
-  var promise = new Promise(function(resolve, reject){
-    record_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
-    record_data = '{"zone":"' + zone + '", "domain":"' + domain + '", "type":"A", "answers":[{"answer": ["' + ip_addr + '"]}]}'
-    superagent.post(record_url)
-    .send(record_data)
-    .set('X-NSONE-Key', apiKey)
-    .set('X-NSONE-Js-Api', "0.1.11")
-    .end((err, res) => {
-      if (err) { return reject(zone) }
-      console.log("Update record of: " + domain);
-      resolve(zone);
-    });
-  });
-  return promise;
-}
-
-var publicIP = function(){
-  var promise = new Promise(function(resolve, reject){
-    superagent.get("https://api.ipify.org	")
+    superagent.get("http://ip-api.com/json")
     .end((err, res) => {
       if (err) {
-        reject('127.0.0.1');
+        reject(err);
       } else {
         resolve(res.text);
       }
@@ -728,9 +697,67 @@ var publicIP = function(){
   return promise;
 }
 
+var addrecord = function(zone, domain, latlong){
+  var promise = new Promise(function(resolve, reject){
+    latlongJson = JSON.parse(latlong);
+    lat = latlongJson["lat"];
+    longi = latlongJson["lon"];
+    ip_addr = latlongJson["query"];
+    record_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
+    record_data = '{"zone":"' + zone + '","domain":"' + domain
+      + '","ttl":60,"type":"A","answers":[{"answer":["'
+      + ip_addr + '"],"meta":{"latitude":' + lat + ',"longitude":'
+      + longi + '}}],"filters":[{"filter":"geotarget_latlong","config":{}}]}';
+    superagent.put(record_url)
+    .send(record_data)
+    .set('X-NSONE-Key', apiKey)
+    .set('X-NSONE-Js-Api', "0.1.11")
+    .end((err, res) => {
+      if (err) {
+        console.log(err);
+        return reject(domain);
+      }
+      console.log("Add new record of: " + domain);
+      resolve(zone);
+    });
+  });
+  return promise;
+}
+
+var updaterecord = function(zone, domain, latlong){
+  var promise = new Promise(function(resolve, reject){
+    latlongJson = JSON.parse(latlong);
+    lat = latlongJson["lat"];
+    longi = latlongJson["lon"];
+    ip_addr = latlongJson["query"];
+    record_url = ns1_base_url + '/zones/' + zone + '/' + domain + '/A'
+    superagent.get(record_url)
+    .set('X-NSONE-Key', apiKey)
+    .set('X-NSONE-Js-Api', "0.1.11")
+    .end((err, res) => {
+      if (err) { return reject(zone); }
+      answers = JSON.parse(res.text)["answers"];
+      new_details = JSON.parse('{"answer":["' + ip_addr + '"],"meta":{"latitude":'
+        + lat + ',"longitude":' + longi + '}}')
+      answers.push(new_details);
+      answers_update = '{"answers":' + JSON.stringify(answers) + '}';
+      superagent.post(record_url)
+      .send(answers_update)
+      .set('X-NSONE-Key', apiKey)
+      .set('X-NSONE-Js-Api', "0.1.11")
+      .end((err, res) => {
+        if (err) { return reject(zone) }
+        console.log("Update record of: " + domain);
+        resolve(zone);
+      });
+    });
+  });
+  return promise;
+}
+
 var updateDNS = function(domain){
   var promise = new Promise(function(resolve, reject){
-    Promise.all([getZone(domain), publicIP()])
+    Promise.all([getZone(domain), getLatlong()])
     .then(values => {
       checkrecord(values[0], domain)
       .then(zone => updaterecord(values[0], domain, values[1]))
